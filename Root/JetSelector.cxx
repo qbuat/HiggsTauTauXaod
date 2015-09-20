@@ -73,8 +73,7 @@ EL::StatusCode JetSelector :: changeInput (bool /*firstFile*/)
 
 EL::StatusCode JetSelector :: initialize ()
 {
-  xAOD::TEvent* event = wk()->xaodEvent();
-  ATH_MSG_INFO("Number of events = " << event->getEntries());
+  ATH_MSG_INFO("Initialization completed");
   return EL::StatusCode::SUCCESS;
 }
 

@@ -30,7 +30,6 @@ public:
   // Tree *myTree; //!
   // TH1 *myHist; //!
 
-  TauAnalysisTools::TauTruthMatchingTool *m_t2mt; //!
   EventVariablesTool *m_var_tool; //!
 
   // this is a standard constructor

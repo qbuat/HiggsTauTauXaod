@@ -69,13 +69,6 @@ EL::StatusCode EventSelector :: changeInput (bool /*firstFile*/)
 EL::StatusCode EventSelector :: initialize ()
 {
 
-  if (asg::ToolStore::contains<TauAnalysisTools::TauTruthMatchingTool>("TauTruthMatchingTool")) {
-    m_t2mt = asg::ToolStore::get<TauAnalysisTools::TauTruthMatchingTool>("TauTruthMatchingTool");
-  } else {
-    m_t2mt = new TauAnalysisTools::TauTruthMatchingTool("TauTruthMatchingTool");
-    EL_RETURN_CHECK("initialize", m_t2mt->initialize());
-  }
-
   if (asg::ToolStore::contains<EventVariablesTool>("EventVariablesTool")) {
     m_var_tool = asg::ToolStore::get<EventVariablesTool>("EventVariablesTool");
   } else {
@@ -83,8 +76,7 @@ EL::StatusCode EventSelector :: initialize ()
     EL_RETURN_CHECK("initialize", m_var_tool->initialize());
   }
 
-  xAOD::TEvent* event = wk()->xaodEvent();
-  ATH_MSG_INFO("Number of events = " << event->getEntries());
+  ATH_MSG_INFO("Initialization completed");
   return EL::StatusCode::SUCCESS;
 }
 
