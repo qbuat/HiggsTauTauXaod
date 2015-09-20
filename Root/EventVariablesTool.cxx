@@ -31,10 +31,10 @@ StatusCode EventVariablesTool::execute(const xAOD::EventInfo * ei,
   ei->auxdecor<double>("tau1_m") = tau1->m();
 
   // second tau
-  ei->auxdecor<double>("tau1_pt") = tau1->pt();
-  ei->auxdecor<double>("tau1_eta") = tau1->eta();
-  ei->auxdecor<double>("tau1_phi") = tau1->phi();
-  ei->auxdecor<double>("tau1_m") = tau1->m();
+  ei->auxdecor<double>("tau2_pt") = tau2->pt();
+  ei->auxdecor<double>("tau2_eta") = tau2->eta();
+  ei->auxdecor<double>("tau2_phi") = tau2->phi();
+  ei->auxdecor<double>("tau2_m") = tau2->m();
 
   // ditau system
   ei->auxdecor<double>("delta_eta") = fabs(tau1->eta() - tau2->eta());
