@@ -1,9 +1,7 @@
 #include <EventLoop/Job.h>
 #include <EventLoop/StatusCode.h>
 #include <EventLoop/Worker.h>
-#include <HiggsTauTauXaod/TauSelector.h>
-#include "TruthUtils/PIDCodes.h"
-
+#include <HiggsTauTauXaod/JetCalibrator.h>
 
 // xAOD ROOT ACCESS 
 #include "xAODRootAccess/Init.h"
@@ -14,8 +12,7 @@
 #include "AsgTools/MsgStreamMacros.h"
 
 // EDM
-#include "xAODTruth/TruthParticleContainer.h"
-#include "xAODTau/TauJetContainer.h"
+#include "xAODJet/JetContainer.h"
 #include "xAODCore/AuxContainerBase.h"
 
 // Local stuff
@@ -23,17 +20,18 @@
 #include "HiggsTauTauXaod/Utils.h"
 
 // this is needed to distribute the algorithm to the workers
-ClassImp(TauSelector)
+ClassImp(JetCalibrator)
 
-TauSelector :: TauSelector ()
+
+
+JetCalibrator :: JetCalibrator ()
 {
 }
 
 
 
-EL::StatusCode TauSelector :: setupJob (EL::Job& job)
+EL::StatusCode JetCalibrator :: setupJob (EL::Job& job)
 {
-
   job.useXAOD ();
   EL_RETURN_CHECK("setupJob", xAOD::Init("TauSelector"));
   return EL::StatusCode::SUCCESS;
@@ -41,7 +39,7 @@ EL::StatusCode TauSelector :: setupJob (EL::Job& job)
 
 
 
-EL::StatusCode TauSelector :: histInitialize ()
+EL::StatusCode JetCalibrator :: histInitialize ()
 {
   // Here you do everything that needs to be done at the very
   // beginning on each worker node, e.g. create histograms and output
@@ -52,7 +50,7 @@ EL::StatusCode TauSelector :: histInitialize ()
 
 
 
-EL::StatusCode TauSelector :: fileExecute ()
+EL::StatusCode JetCalibrator :: fileExecute ()
 {
   // Here you do everything that needs to be done exactly once for every
   // single file, e.g. collect a list of all lumi-blocks processed
@@ -61,7 +59,7 @@ EL::StatusCode TauSelector :: fileExecute ()
 
 
 
-EL::StatusCode TauSelector :: changeInput (bool /*firstFile*/)
+EL::StatusCode JetCalibrator :: changeInput (bool /*firstFile*/)
 {
   // Here you do everything you need to do when we change input files,
   // e.g. resetting branch addresses on trees.  If you are using
@@ -71,14 +69,28 @@ EL::StatusCode TauSelector :: changeInput (bool /*firstFile*/)
 
 
 
-EL::StatusCode TauSelector :: initialize ()
+EL::StatusCode JetCalibrator :: initialize ()
 {
-  if (asg::ToolStore::contains<TauAnalysisTools::TauTruthMatchingTool>("TauTruthMatchingTool")) {
-    m_t2mt = asg::ToolStore::get<TauAnalysisTools::TauTruthMatchingTool>("TauTruthMatchingTool");
+  if (asg::ToolStore::contains<JetCleaningTool>("JetCleaningTool")) {
+    m_jcl_t = asg::ToolStore::get<JetCleaningTool>("JetCleaningTool");
   } else {
-    m_t2mt = new TauAnalysisTools::TauTruthMatchingTool("TauTruthMatchingTool");
-    EL_RETURN_CHECK("initialize", m_t2mt->initialize());
+    m_jcl_t = new JetCleaningTool("JetCleaningTool");
+    EL_RETURN_CHECK("initialize", m_jcl_t->setProperty("CutLevel", "LooseBad"));
+    EL_RETURN_CHECK("initialize", m_jcl_t->setProperty("DoUgly", false));
+    EL_RETURN_CHECK("initialize", m_jcl_t->initialize());
   }
+
+  if (asg::ToolStore::contains<JetCalibrationTool>("JetCalibrationTool")) {
+    m_jca_t = asg::ToolStore::get<JetCalibrationTool>("JetCalibrationTool");
+  } else {
+    m_jca_t = new JetCalibrationTool("JetCalibrationTool",
+				     "AntiKt4LCTopo",
+				     "JES_MC15Prerecommendation_April2015.config",
+				     "JetArea_Residual_Origin_EtaJES_GSC",
+				     false);
+    EL_RETURN_CHECK("initialize", m_jca_t->initializeTool("JetCalibrationTool"));
+  }
+      
 
   ATH_MSG_INFO("Initialization completed");
   return EL::StatusCode::SUCCESS;
@@ -86,50 +98,18 @@ EL::StatusCode TauSelector :: initialize ()
 
 
 
-EL::StatusCode TauSelector :: execute ()
+EL::StatusCode JetCalibrator :: execute ()
 {
-
-  ATH_MSG_DEBUG("---------------");
-  ATH_MSG_DEBUG("execute next event: " << wk()->treeEntry());
-  xAOD::TEvent* event = wk()->xaodEvent();
-  xAOD::TStore* store = wk()->xaodStore();
-
-
-  const xAOD::TauJetContainer* taus = 0;
-  EL_RETURN_CHECK("execute", Utils::retrieve(taus, "TauJets", event, store));
-
-  const xAOD::TruthParticleContainer* truths = 0;
-  EL_RETURN_CHECK("execute", Utils::retrieve(truths, "SelectedTruthTaus", event, store));
-
-
-  xAOD::TauJetContainer* selected_taus = new xAOD::TauJetContainer();
-  xAOD::AuxContainerBase* selected_taus_aux = new xAOD::AuxContainerBase();
-  selected_taus->setStore(selected_taus_aux);
-
-  for(auto truth: *truths) {
-    if (truth->isTau() and (bool)truth->auxdata<char>("IsHadronicTau")) {
-      const xAOD::TauJet* tau = Utils::match(m_t2mt->getTruthTauP4Vis(*truth), taus);
-      if (tau != NULL) {
-	xAOD::TauJet* new_tau = new xAOD::TauJet();
-	new_tau->makePrivateStore(*tau);
-	selected_taus->push_back(new_tau);
-      }
-    }
-  }    
-
-
-  // sort them by pT
-  selected_taus->sort(Utils::comparePt);
-
-  ATH_MSG_DEBUG("Store the selected taus");
-  EL_RETURN_CHECK("execute", store->record(selected_taus, "SelectedTaus"));
-  EL_RETURN_CHECK("execute", store->record(selected_taus_aux, "SelectedTausAux."));
+  // Here you do everything that needs to be done on every single
+  // events, e.g. read input variables, apply cuts, and fill
+  // histograms and trees.  This is where most of your actual analysis
+  // code will go.
   return EL::StatusCode::SUCCESS;
 }
 
 
 
-EL::StatusCode TauSelector :: postExecute ()
+EL::StatusCode JetCalibrator :: postExecute ()
 {
   // Here you do everything that needs to be done after the main event
   // processing.  This is typically very rare, particularly in user
@@ -139,19 +119,25 @@ EL::StatusCode TauSelector :: postExecute ()
 
 
 
-EL::StatusCode TauSelector :: finalize ()
+EL::StatusCode JetCalibrator :: finalize ()
 {
-  ATH_MSG_INFO("finalize");
-  if (m_t2mt) {
-    m_t2mt = NULL;
-    delete m_t2mt;
+
+  if (m_jcl_t) {
+    m_jcl_t = NULL;
+    delete m_jcl_t;
   }
+
+  if (m_jca_t) {
+    m_jca_t = NULL;
+    delete m_jca_t;
+  }
+
   return EL::StatusCode::SUCCESS;
 }
 
 
 
-EL::StatusCode TauSelector :: histFinalize ()
+EL::StatusCode JetCalibrator :: histFinalize ()
 {
   // This method is the mirror image of histInitialize(), meaning it
   // gets called after the last event has been processed on the worker

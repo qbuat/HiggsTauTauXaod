@@ -139,6 +139,11 @@ EL::StatusCode MuonSelector :: postExecute ()
 
 EL::StatusCode MuonSelector :: finalize ()
 {
+  ATH_MSG_INFO("finalize");
+  if (m_t2mt) {
+    m_t2mt = NULL;
+    delete m_t2mt;
+  }
   return EL::StatusCode::SUCCESS;
 }
 

@@ -1,3 +1,5 @@
+#include <HiggsTauTauXaod/JetCalibrator.h>
+
 #include <HiggsTauTauXaod/TruthTausSelector.h>
 
 #include <HiggsTauTauXaod/JetSelector.h>
@@ -48,4 +50,8 @@
 
 #ifdef __CINT__
 #pragma link C++ class TruthTausSelector+;
+#endif
+
+#ifdef __CINT__
+#pragma link C++ class JetCalibrator+;
 #endif

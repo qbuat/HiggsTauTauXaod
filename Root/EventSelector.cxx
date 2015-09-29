@@ -130,6 +130,12 @@ EL::StatusCode EventSelector :: postExecute ()
 
 EL::StatusCode EventSelector :: finalize ()
 {
+  ATH_MSG_INFO("finalize");
+  if (m_var_tool) {
+    m_var_tool = NULL;
+    delete m_var_tool;
+  }
+
   return EL::StatusCode::SUCCESS;
 }
 

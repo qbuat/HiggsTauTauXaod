@@ -140,15 +140,13 @@ EL::StatusCode ElectronSelector :: postExecute ()
 
 EL::StatusCode ElectronSelector :: finalize ()
 {
-  // This method is the mirror image of initialize(), meaning it gets
-  // called after the last event has been processed on the worker node
-  // and allows you to finish up any objects you created in
-  // initialize() before they are written to disk.  This is actually
-  // fairly rare, since this happens separately for each worker node.
-  // Most of the time you want to do your post-processing on the
-  // submission node after all your histogram outputs have been
-  // merged.  This is different from histFinalize() in that it only
-  // gets called on worker nodes that processed input events.
+
+  ATH_MSG_INFO("finalize");
+  if (m_t2mt) {
+    m_t2mt = NULL;
+    delete m_t2mt;
+  }
+
   return EL::StatusCode::SUCCESS;
 }
 
