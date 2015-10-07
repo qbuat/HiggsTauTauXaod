@@ -36,6 +36,10 @@ if __name__ == '__main__':
     sample.printContent()
     sample.setMetaString ("nc_tree", "CollectionTree")
         
+
+    preproc = ROOT.EventPreProcessor()
+    preproc.SetName('Htt_EventPreProcessor')
+    preproc.grl_file = 'share/data15_13TeV.periodAllYear_DetStatus-v65-pro19-01_DQDefects-00-01-02_PHYS_StandardGRL_All_Good.xml'
     truth_sel = ROOT.TruthTausSelector()
     truth_sel.SetName('Htt_TruthTausSelector')
 
@@ -47,6 +51,7 @@ if __name__ == '__main__':
 
     tau_sel = ROOT.TauSelector()
     tau_sel.SetName('Htt_TauSelector')
+    tau_sel.trigger_name = 'HLT_tau35_medium1_tracktwo_tau25_medium1_tracktwo_L1TAU20IM_2TAU12IM'
 
     jet_sel = ROOT.JetSelector()
     jet_sel.SetName('Htt_JetSelector')
@@ -56,6 +61,7 @@ if __name__ == '__main__':
     main_sel.SetName('Htt_EventSelector')
 
     algs = [
+        preproc,
         truth_sel,
         elec_sel,
         muon_sel,

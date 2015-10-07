@@ -92,7 +92,7 @@ EL::StatusCode TauSelector :: initialize ()
       m_trigTauMatchTool = asg::ToolStore::get<Trig::TrigTauMatchingTool>("TrigTauMatchingTool");
     } else {
       m_trigTauMatchTool = new Trig::TrigTauMatchingTool("TrigTauMatchingTool");
-      EL_RETURN_CHECK("initialize", m_trigTauMatchTool->setProperty("TriggerDecisionTool", trigDecHandle));
+      EL_RETURN_CHECK("initialize", m_trigTauMatchTool->setProperty("TrigDecisionTool", trigDecHandle));
       EL_RETURN_CHECK("initialize", m_trigTauMatchTool->initialize());
     }
   } else{
@@ -119,14 +119,14 @@ EL::StatusCode TauSelector :: execute ()
 
 
   const xAOD::EventInfo * ei = 0;
-  if (ei->eventType(xAOD::EventInfo::IS_SIMULATION))
-    EL_RETURN_CHECK("execute", Utils::retrieve(ei, "EventInfo", event, store));
+  EL_RETURN_CHECK("execute", Utils::retrieve(ei, "EventInfo", event, store));
 
   const xAOD::TauJetContainer* taus = 0;
   EL_RETURN_CHECK("execute", Utils::retrieve(taus, "TauJets", event, store));
 
   const xAOD::TruthParticleContainer* truths = 0;
-  EL_RETURN_CHECK("execute", Utils::retrieve(truths, "SelectedTruthTaus", event, store));
+  if (ei->eventType(xAOD::EventInfo::IS_SIMULATION))
+    EL_RETURN_CHECK("execute", Utils::retrieve(truths, "SelectedTruthTaus", event, store));
 
 
   xAOD::TauJetContainer* selected_taus = new xAOD::TauJetContainer();

@@ -3,6 +3,8 @@
 
 #include <EventLoop/Algorithm.h>
 
+#include "GoodRunsLists/GoodRunsListSelectionTool.h"
+
 namespace TrigConf {
   class xAODConfigTool;
 }
@@ -18,12 +20,13 @@ class EventPreProcessor : public EL::Algorithm
   // that way they can be set directly from CINT and python.
 public:
   // float cutValue;
-
+  std::string grl_file;
 
  private:
   TrigConf::xAODConfigTool*    m_trigConfTool;  //!
   Trig::TrigDecisionTool*      m_trigDecTool;   //!
-
+  GoodRunsListSelectionTool *m_grl; //!
+  
   // variables that don't get filled at submission time should be
   // protected from being send from the submission node to the worker
   // node (done by the //!)

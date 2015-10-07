@@ -12,6 +12,7 @@
 #include "AsgTools/MsgStreamMacros.h"
 
 // EDM
+#include "xAODEventInfo/EventInfo.h"
 #include "xAODTruth/TruthParticleContainer.h"
 #include "xAODCore/AuxContainerBase.h"
 
@@ -79,7 +80,6 @@ EL::StatusCode TruthTausSelector :: initialize ()
   }
 
   xAOD::TEvent* event = wk()->xaodEvent();
-  ATH_MSG_INFO("Number of events = " << event->getEntries());
 
   return EL::StatusCode::SUCCESS;
 }
@@ -92,8 +92,15 @@ EL::StatusCode TruthTausSelector :: execute ()
   ATH_MSG_DEBUG("---------------");
   ATH_MSG_DEBUG("execute next event: " << wk()->treeEntry());
   // odly enough, we don't need a direct instance of the event here
-  // xAOD::TEvent* event = wk()->xaodEvent();
+  xAOD::TEvent* event = wk()->xaodEvent();
   xAOD::TStore* store = wk()->xaodStore();
+
+
+  const xAOD::EventInfo * ei = 0;
+  EL_RETURN_CHECK("execute", Utils::retrieve(ei, "EventInfo", event, store));
+
+  if (not ei->eventType(xAOD::EventInfo::IS_SIMULATION))
+    return EL::StatusCode::SUCCESS;
 
   // event initialization of the tools (if needed)
   EL_RETURN_CHECK("execute", m_t2mt->initializeEvent());

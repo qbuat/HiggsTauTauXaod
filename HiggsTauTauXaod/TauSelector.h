@@ -21,6 +21,13 @@ public:
 
   std::string trigger_name;
 
+ private:
+  // Trigger Tools
+  Trig::TrigDecisionTool *m_trigDecTool; //!
+  Trig::TrigTauMatchingTool *m_trigTauMatchTool; //!
+
+  TauAnalysisTools::TauTruthMatchingTool *m_t2mt; //!
+
   // variables that don't get filled at submission time should be
   // protected from being send from the submission node to the worker
   // node (done by the //!)
@@ -30,12 +37,6 @@ public:
   // Tree *myTree; //!
   // TH1 *myHist; //!
 
- private:
-  // Trigger Tools
-  Trig::TrigDecisionTool *m_trigDecTool; //!
-  Trig::TrigTauMatchingTool *m_trigTauMatchTool; //!
-
-  TauAnalysisTools::TauTruthMatchingTool *m_t2mt; //!
 
   // this is a standard constructor
   TauSelector ();
