@@ -13,6 +13,7 @@
 #include "TruthUtils/PIDCodes.h"
 
 // EDM
+#include "xAODEventInfo/EventInfo.h"
 #include "xAODTruth/TruthParticleContainer.h"
 #include "xAODMuon/MuonContainer.h"
 #include "xAODCore/AuxContainerBase.h"
@@ -26,7 +27,7 @@ ClassImp(MuonSelector)
 
 
 
-MuonSelector :: MuonSelector ()
+MuonSelector :: MuonSelector () : m_t2mt(nullptr)
 {
 }
 
@@ -95,28 +96,45 @@ EL::StatusCode MuonSelector :: execute ()
   xAOD::TStore* store = wk()->xaodStore();
 
 
+  const xAOD::EventInfo * ei = 0;
+  EL_RETURN_CHECK("execute", Utils::retrieve(ei, "EventInfo", event, store));
+
   const xAOD::MuonContainer* muons = 0;
   EL_RETURN_CHECK("execute", Utils::retrieve(muons, "Muons", event, store));
 
   const xAOD::TruthParticleContainer* truths = 0;
-  EL_RETURN_CHECK("execute", Utils::retrieve(truths, "SelectedTruthTaus", event, store));
+  if (ei->eventType(xAOD::EventInfo::IS_SIMULATION))
+    EL_RETURN_CHECK("execute", Utils::retrieve(truths, "SelectedTruthTaus", event, store));
 
   xAOD::MuonContainer* selected_muons = new xAOD::MuonContainer();
   xAOD::AuxContainerBase* selected_muons_aux = new xAOD::AuxContainerBase();
   selected_muons->setStore(selected_muons_aux);
 
-  for(auto truth: *truths) {
-    if (m_t2mt->getNTauDecayParticles(*truth, MC::PID::MUON, true) == 1) {
-      const xAOD::Muon* muon = Utils::match(m_t2mt->getTruthTauP4Vis(*truth), muons);
-      if (muon != NULL) {
-	xAOD::Muon* new_muon = new xAOD::Muon();
-	new_muon->makePrivateStore(*muon);
-	selected_muons->push_back(new_muon);
+  // block to perform a truth based selection 
+  // will only work for the higgs signal though
+  if (ei->eventType(xAOD::EventInfo::IS_SIMULATION)) {
+    for(auto truth: *truths) { 
+      if (m_t2mt->getNTauDecayParticles(*truth, MC::PID::MUON, true) == 1) {
+	const xAOD::Muon* muon = Utils::match(m_t2mt->getTruthTauP4Vis(*truth), muons);
+	if (muon != NULL) {
+	  xAOD::Muon* new_muon = new xAOD::Muon();
+	  new_muon->makePrivateStore(*muon);
+	  selected_muons->push_back(new_muon);
+	}
       }
+    }    
+  }
+
+  else {
+    for (const auto muon: *muons) {
+      xAOD::Muon *new_muon = new xAOD::Muon();
+      new_muon->makePrivateStore(*muon);
+      selected_muons->push_back(new_muon);
     }
-  }    
+  }
 
   // sort them by pT
+  ATH_MSG_DEBUG("Sort the muon by descending pT");
   selected_muons->sort(Utils::comparePt);
 
   ATH_MSG_DEBUG("Store the selected muons");

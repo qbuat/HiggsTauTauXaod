@@ -6,6 +6,12 @@
 #include "TauAnalysisTools/TauTruthMatchingTool.h"
 
 
+namespace Trig {
+  class TrigDecisionTool;
+  class TrigTauMatchingTool;
+}
+
+
 class TauSelector : public EL::Algorithm
 {
   // put your configuration variables here as public variables.
@@ -13,17 +19,23 @@ class TauSelector : public EL::Algorithm
 public:
   // float cutValue;
 
-
+  std::string trigger_name;
 
   // variables that don't get filled at submission time should be
   // protected from being send from the submission node to the worker
   // node (done by the //!)
 public:
+
+
   // Tree *myTree; //!
   // TH1 *myHist; //!
 
-  TauAnalysisTools::TauTruthMatchingTool *m_t2mt; //!
+ private:
+  // Trigger Tools
+  Trig::TrigDecisionTool *m_trigDecTool; //!
+  Trig::TrigTauMatchingTool *m_trigTauMatchTool; //!
 
+  TauAnalysisTools::TauTruthMatchingTool *m_t2mt; //!
 
   // this is a standard constructor
   TauSelector ();

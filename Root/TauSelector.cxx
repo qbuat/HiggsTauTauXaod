@@ -12,8 +12,11 @@
 // tools
 #include "AsgTools/MsgStream.h"
 #include "AsgTools/MsgStreamMacros.h"
+#include "TrigDecisionTool/TrigDecisionTool.h"
+#include "TrigTauMatching/TrigTauMatching.h"
 
 // EDM
+#include "xAODEventInfo/EventInfo.h"
 #include "xAODTruth/TruthParticleContainer.h"
 #include "xAODTau/TauJetContainer.h"
 #include "xAODCore/AuxContainerBase.h"
@@ -25,15 +28,17 @@
 // this is needed to distribute the algorithm to the workers
 ClassImp(TauSelector)
 
-TauSelector :: TauSelector ()
+TauSelector :: TauSelector () : m_trigDecTool(nullptr),
+  m_trigTauMatchTool(nullptr),
+  m_t2mt(nullptr)
 {
+
 }
 
 
 
 EL::StatusCode TauSelector :: setupJob (EL::Job& job)
 {
-
   job.useXAOD ();
   EL_RETURN_CHECK("setupJob", xAOD::Init("TauSelector"));
   return EL::StatusCode::SUCCESS;
@@ -80,6 +85,24 @@ EL::StatusCode TauSelector :: initialize ()
     EL_RETURN_CHECK("initialize", m_t2mt->initialize());
   }
 
+  if (asg::ToolStore::contains<Trig::TrigDecisionTool>("TrigDecisionTool")) { 
+    m_trigDecTool = asg::ToolStore::get<Trig::TrigDecisionTool>("TrigDecisionTool");
+    ToolHandle<Trig::TrigDecisionTool> trigDecHandle(m_trigDecTool);
+    if (asg::ToolStore::contains<Trig::TrigTauMatchingTool>("TrigTauMatchingTool")) {
+      m_trigTauMatchTool = asg::ToolStore::get<Trig::TrigTauMatchingTool>("TrigTauMatchingTool");
+    } else {
+      m_trigTauMatchTool = new Trig::TrigTauMatchingTool("TrigTauMatchingTool");
+      EL_RETURN_CHECK("initialize", m_trigTauMatchTool->setProperty("TriggerDecisionTool", trigDecHandle));
+      EL_RETURN_CHECK("initialize", m_trigTauMatchTool->initialize());
+    }
+  } else{
+    ATH_MSG_ERROR("TrigDecisionTool must be initialize");
+    return EL::StatusCode::FAILURE;
+  }
+    
+
+
+
   ATH_MSG_INFO("Initialization completed");
   return EL::StatusCode::SUCCESS;
 }
@@ -95,6 +118,10 @@ EL::StatusCode TauSelector :: execute ()
   xAOD::TStore* store = wk()->xaodStore();
 
 
+  const xAOD::EventInfo * ei = 0;
+  if (ei->eventType(xAOD::EventInfo::IS_SIMULATION))
+    EL_RETURN_CHECK("execute", Utils::retrieve(ei, "EventInfo", event, store));
+
   const xAOD::TauJetContainer* taus = 0;
   EL_RETURN_CHECK("execute", Utils::retrieve(taus, "TauJets", event, store));
 
@@ -106,19 +133,34 @@ EL::StatusCode TauSelector :: execute ()
   xAOD::AuxContainerBase* selected_taus_aux = new xAOD::AuxContainerBase();
   selected_taus->setStore(selected_taus_aux);
 
-  for(auto truth: *truths) {
-    if (truth->isTau() and (bool)truth->auxdata<char>("IsHadronicTau")) {
-      const xAOD::TauJet* tau = Utils::match(m_t2mt->getTruthTauP4Vis(*truth), taus);
-      if (tau != NULL) {
-	xAOD::TauJet* new_tau = new xAOD::TauJet();
-	new_tau->makePrivateStore(*tau);
-	selected_taus->push_back(new_tau);
+  // block to perform a truth based selection 
+  // will only work for the higgs signal though
+  if (ei->eventType(xAOD::EventInfo::IS_SIMULATION)) {
+    for(auto truth: *truths) {
+      if (truth->isTau() and (bool)truth->auxdata<char>("IsHadronicTau")) {
+	const xAOD::TauJet* tau = Utils::match(m_t2mt->getTruthTauP4Vis(*truth), taus);
+	if (tau != NULL) {
+	  xAOD::TauJet* new_tau = new xAOD::TauJet();
+	  new_tau->makePrivateStore(*tau);
+	  selected_taus->push_back(new_tau);
+	}
       }
+    }    
+  }
+
+  else {
+    for (const auto tau: *taus) {
+      if (m_trigTauMatchTool->match(tau, trigger_name)) {
+	  xAOD::TauJet* new_tau = new xAOD::TauJet();
+	  new_tau->makePrivateStore(*tau);
+	  selected_taus->push_back(new_tau);
+      }	
     }
-  }    
+  }
 
 
   // sort them by pT
+  ATH_MSG_DEBUG("Sort taus by descending pT");
   selected_taus->sort(Utils::comparePt);
 
   ATH_MSG_DEBUG("Store the selected taus");
@@ -142,6 +184,17 @@ EL::StatusCode TauSelector :: postExecute ()
 EL::StatusCode TauSelector :: finalize ()
 {
   ATH_MSG_INFO("finalize");
+
+  if (m_trigDecTool) {
+    m_trigDecTool = NULL;
+    delete m_trigDecTool;
+  }
+
+  if (m_trigTauMatchTool) {
+    m_trigTauMatchTool = NULL;
+    delete m_trigTauMatchTool;
+  }
+
   if (m_t2mt) {
     m_t2mt = NULL;
     delete m_t2mt;

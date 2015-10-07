@@ -13,6 +13,7 @@
 #include "TruthUtils/PIDCodes.h"
 
 // EDM
+#include "xAODEventInfo/EventInfo.h"
 #include "xAODTruth/TruthParticleContainer.h"
 #include "xAODEgamma/ElectronContainer.h"
 #include "xAODCore/AuxContainerBase.h"
@@ -26,7 +27,7 @@ ClassImp(ElectronSelector)
 
 
 
-ElectronSelector :: ElectronSelector ()
+ElectronSelector :: ElectronSelector () : m_t2mt(nullptr)
 {
 }
 
@@ -95,29 +96,47 @@ EL::StatusCode ElectronSelector :: execute ()
   xAOD::TEvent* event = wk()->xaodEvent();
   xAOD::TStore* store = wk()->xaodStore();
 
+  const xAOD::EventInfo * ei = 0;
+  EL_RETURN_CHECK("execute", Utils::retrieve(ei, "EventInfo", event, store));
 
   const xAOD::ElectronContainer* electrons = 0;
   EL_RETURN_CHECK("execute", Utils::retrieve(electrons, "Electrons", event, store));
 
   const xAOD::TruthParticleContainer* truths = 0;
-  EL_RETURN_CHECK("execute", Utils::retrieve(truths, "SelectedTruthTaus", event, store));
+  if (ei->eventType(xAOD::EventInfo::IS_SIMULATION))
+    EL_RETURN_CHECK("execute", Utils::retrieve(truths, "SelectedTruthTaus", event, store));
 
+  // create a new electron container
   xAOD::ElectronContainer* selected_electrons = new xAOD::ElectronContainer();
   xAOD::AuxContainerBase* selected_electrons_aux = new xAOD::AuxContainerBase();
   selected_electrons->setStore(selected_electrons_aux);
 
-  for(auto truth: *truths) {
-    if (m_t2mt->getNTauDecayParticles(*truth, MC::PID::ELECTRON, true) == 1) {
-      const xAOD::Electron* elec = Utils::match(m_t2mt->getTruthTauP4Vis(*truth), electrons);
-      if (elec != NULL) {
-	xAOD::Electron* new_elec = new xAOD::Electron();
-	new_elec->makePrivateStore(*elec);
-	selected_electrons->push_back(new_elec);
+  // block to perform a truth based selection 
+  // will only work for the higgs signal though
+  if (ei->eventType(xAOD::EventInfo::IS_SIMULATION)) {
+    for(auto truth: *truths) {
+      if (m_t2mt->getNTauDecayParticles(*truth, MC::PID::ELECTRON, true) == 1) {
+	const xAOD::Electron* elec = Utils::match(m_t2mt->getTruthTauP4Vis(*truth), electrons);
+	if (elec != NULL) {
+	  xAOD::Electron* new_elec = new xAOD::Electron();
+	  new_elec->makePrivateStore(*elec);
+	  selected_electrons->push_back(new_elec);
+	}
       }
+    }    
+  }
+  
+  else { 
+    // The actual electron selector should go here
+    for (const auto elec: *electrons) {
+      xAOD::Electron * new_elec = new xAOD::Electron();
+      new_elec->makePrivateStore(*elec);
+      selected_electrons->push_back(new_elec);
     }
-  }    
+  }
 
   // sort them by pT
+  ATH_MSG_DEBUG("Sort the electrons by descending pT");
   selected_electrons->sort(Utils::comparePt);
 
   ATH_MSG_DEBUG("Store the selected electrons");

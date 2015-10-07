@@ -15,9 +15,12 @@
 #include "xAODMuon/MuonContainer.h"
 #include "xAODEgamma/ElectronContainer.h"
 #include "xAODMissingET/MissingETContainer.h"
-
 #include "xAODTruth/TruthParticle.h"
 #include "xAODTruth/TruthParticleContainer.h"
+
+// tools
+#include "TrigConfxAOD/xAODConfigTool.h"
+#include "TrigDecisionTool/TrigDecisionTool.h"
 
 // Local stuff
 #include "HiggsTauTauXaod/tools.h"
@@ -76,7 +79,7 @@ EL::StatusCode EventSelector :: initialize ()
     EL_RETURN_CHECK("initialize", m_var_tool->initialize());
   }
 
-  ATH_MSG_INFO("Initialization completed");
+
   return EL::StatusCode::SUCCESS;
 }
 
@@ -84,7 +87,6 @@ EL::StatusCode EventSelector :: initialize ()
 
 EL::StatusCode EventSelector :: execute ()
 {
-  ATH_MSG_DEBUG("execute next event: "<< wk()->treeEntry());
   xAOD::TEvent* event = wk()->xaodEvent();
   xAOD::TStore* store = wk()->xaodStore();
 

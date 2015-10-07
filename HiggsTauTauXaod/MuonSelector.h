@@ -12,6 +12,8 @@ public:
   // float cutValue;
 
 
+ private:
+  TauAnalysisTools::TauTruthMatchingTool *m_t2mt; //!
 
   // variables that don't get filled at submission time should be
   // protected from being send from the submission node to the worker
@@ -20,7 +22,6 @@ public:
   // Tree *myTree; //!
   // TH1 *myHist; //!
 
-  TauAnalysisTools::TauTruthMatchingTool *m_t2mt; //!
 
 
   // this is a standard constructor

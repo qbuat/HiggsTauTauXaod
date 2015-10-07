@@ -1,18 +1,28 @@
-#ifndef HiggsTauTauXaod_ElectronSelector_H
-#define HiggsTauTauXaod_ElectronSelector_H
+#ifndef HiggsTauTauXaod_EventPreProcessor_H
+#define HiggsTauTauXaod_EventPreProcessor_H
 
 #include <EventLoop/Algorithm.h>
-#include "TauAnalysisTools/TauTruthMatchingTool.h"
 
-class ElectronSelector : public EL::Algorithm
+namespace TrigConf {
+  class xAODConfigTool;
+}
+
+namespace Trig {
+  class TrigDecisionTool;
+}
+
+
+class EventPreProcessor : public EL::Algorithm
 {
   // put your configuration variables here as public variables.
   // that way they can be set directly from CINT and python.
- public:
+public:
   // float cutValue;
 
+
  private:
-  TauAnalysisTools::TauTruthMatchingTool *m_t2mt; //!
+  TrigConf::xAODConfigTool*    m_trigConfTool;  //!
+  Trig::TrigDecisionTool*      m_trigDecTool;   //!
 
   // variables that don't get filled at submission time should be
   // protected from being send from the submission node to the worker
@@ -24,7 +34,7 @@ public:
 
 
   // this is a standard constructor
-  ElectronSelector ();
+  EventPreProcessor ();
 
   // these are the functions inherited from Algorithm
   virtual EL::StatusCode setupJob (EL::Job& job);
@@ -38,7 +48,7 @@ public:
   virtual EL::StatusCode histFinalize ();
 
   // this is needed to distribute the algorithm to the workers
-  ClassDef(ElectronSelector, 1);
+  ClassDef(EventPreProcessor, 1);
 };
 
 #endif

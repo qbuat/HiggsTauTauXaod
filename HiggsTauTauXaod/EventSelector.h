@@ -5,16 +5,12 @@
 
 #include "xAODJet/JetContainer.h"
 #include "xAODTau/TauJetContainer.h"
-#include "TauAnalysisTools/TauTruthMatchingTool.h"
 
 #include "HiggsTauTauXaod/EventVariablesTool.h"
 
 class EventSelector : public EL::Algorithm
 {
 
- private:
-  
-  
 
   // put your configuration variables here as public variables.
   // that way they can be set directly from CINT and python.
