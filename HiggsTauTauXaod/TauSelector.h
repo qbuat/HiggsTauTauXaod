@@ -2,6 +2,7 @@
 #define HiggsTauTauXaod_TauSelector_H
 
 #include <EventLoop/Algorithm.h>
+#include <TH1F.h>
 
 #include "TauAnalysisTools/TauTruthMatchingTool.h"
 
@@ -32,7 +33,6 @@ public:
   // protected from being send from the submission node to the worker
   // node (done by the //!)
 public:
-
 
   // Tree *myTree; //!
   // TH1 *myHist; //!

@@ -2,11 +2,19 @@
 #define HiggsTauTauXaod_EventSelector_H
 
 #include <EventLoop/Algorithm.h>
+#include <TH1F.h>
 
 #include "xAODJet/JetContainer.h"
 #include "xAODTau/TauJetContainer.h"
 
 #include "HiggsTauTauXaod/EventVariablesTool.h"
+
+#include "GoodRunsLists/GoodRunsListSelectionTool.h"
+
+namespace Trig {
+  class TrigDecisionTool;
+}
+
 
 class EventSelector : public EL::Algorithm
 {
@@ -16,18 +24,24 @@ class EventSelector : public EL::Algorithm
   // that way they can be set directly from CINT and python.
  public:
   // float cutValue;
+  std::string trigger_name;
 
-
+ private:
+  GoodRunsListSelectionTool *m_grl; //!
+  Trig::TrigDecisionTool *m_trigDecTool; //!
+  EventVariablesTool *m_var_tool; //!
 
   // variables that don't get filled at submission time should be
   // protected from being send from the submission node to the worker
   // node (done by the //!)
 public:
+
+  TH1F* m_htaus; //!
+  TH1F* m_hcutflow; //!
   // Tree *myTree; //!
   // TH1 *myHist; //!
 
-  EventVariablesTool *m_var_tool; //!
-
+ 
   // this is a standard constructor
   EventSelector ();
 

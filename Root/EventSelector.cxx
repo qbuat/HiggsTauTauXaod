@@ -19,7 +19,6 @@
 #include "xAODTruth/TruthParticleContainer.h"
 
 // tools
-#include "TrigConfxAOD/xAODConfigTool.h"
 #include "TrigDecisionTool/TrigDecisionTool.h"
 
 // Local stuff
@@ -31,7 +30,9 @@ ClassImp(EventSelector)
 
 
 
-EventSelector :: EventSelector ()
+EventSelector :: EventSelector () : m_grl(nullptr),
+  m_trigDecTool(nullptr),
+  m_var_tool(nullptr)
 {
 
 }
@@ -50,6 +51,17 @@ EL::StatusCode EventSelector :: setupJob (EL::Job& job)
 
 EL::StatusCode EventSelector :: histInitialize ()
 {
+
+  m_htaus = new TH1F("ntaus", "ntaus", 10, 0, 10);
+
+  m_hcutflow = new TH1F("cutflow", "cutflow", 10, 0, 10);
+  m_hcutflow->GetXaxis()->SetBinLabel(1, "processed");
+  m_hcutflow->GetXaxis()->SetBinLabel(2, "grl");
+  m_hcutflow->GetXaxis()->SetBinLabel(3, "trigger");
+
+  wk()->addOutput(m_htaus);
+  wk()->addOutput(m_hcutflow);
+
   return EL::StatusCode::SUCCESS;
 }
 
@@ -79,7 +91,21 @@ EL::StatusCode EventSelector :: initialize ()
     EL_RETURN_CHECK("initialize", m_var_tool->initialize());
   }
 
+  if (asg::ToolStore::contains<Trig::TrigDecisionTool>("TrigDecisionTool")) {
+    m_trigDecTool = asg::ToolStore::get<Trig::TrigDecisionTool>("TrigDecisionTool");
+  } else {
+    ATH_MSG_ERROR("The TrigDecisionTool needs to be initialized");
+    return EL::StatusCode::FAILURE;
+  }
 
+  if (asg::ToolStore::contains<GoodRunsListSelectionTool>("GoodRunsListSelectionTool")) {
+    m_grl = asg::ToolStore::get<GoodRunsListSelectionTool>("GoodRunsListSelectionTool");
+  } else {
+    ATH_MSG_ERROR("The GRL tool needs to be initialized");
+    return EL::StatusCode::FAILURE;
+  }
+
+  ATH_MSG_INFO("Initialization completed");
   return EL::StatusCode::SUCCESS;
 }
 
@@ -90,11 +116,26 @@ EL::StatusCode EventSelector :: execute ()
   xAOD::TEvent* event = wk()->xaodEvent();
   xAOD::TStore* store = wk()->xaodStore();
 
+  m_hcutflow->Fill("processed", 1);
   if ((wk()->treeEntry() % 200) == 0)
     ATH_MSG_INFO("Read event number "<< wk()->treeEntry() << " / " << event->getEntries());
 
   const xAOD::EventInfo * ei = 0;
   EL_RETURN_CHECK("execute", Utils::retrieve(ei, "EventInfo", event, store));
+
+  // Apply the grl
+  if (not ei->eventType(xAOD::EventInfo::IS_SIMULATION))
+      if (not m_grl->passRunLB(*ei))
+	return EL::StatusCode::SUCCESS;
+
+  m_hcutflow->Fill("grl", 1);
+
+  // Apply trigger
+  if (not m_trigDecTool->isPassed(trigger_name))
+    return EL::StatusCode::SUCCESS;
+
+  m_hcutflow->Fill("trigger", 1);
+
 
   const xAOD::TauJetContainer* taus = 0;
   EL_RETURN_CHECK("execute", Utils::retrieve(taus, "SelectedTaus", event, store));
@@ -112,11 +153,14 @@ EL::StatusCode EventSelector :: execute ()
   const xAOD::MissingETContainer * mets = 0;
   EL_RETURN_CHECK("execute", Utils::retrieve(mets, "MET_Reference_AntiKt4LCTopo", event, store));
 
+  // ATH_MSG_INFO(Form("N(taus) = %d", (int)taus->size()));
+  m_htaus->Fill(taus->size());
+
 
   ATH_MSG_DEBUG(Form("N(el) =  %d, N(mu) = %d, N(tau) = %d", (int)electrons->size(), (int)muons->size(), (int)taus->size()));
   ATH_MSG_DEBUG("N(leptons) = "<< (electrons->size() + muons->size() + taus->size()));
-  if (electrons->size() + muons->size() + taus->size() != 2)
-    ATH_MSG_ERROR("Need exactly two leptons to proceed and got : "<<electrons->size() + muons->size() + taus->size());
+  // if (electrons->size() + muons->size() + taus->size() != 2)
+  //   ATH_MSG_ERROR("Need exactly two leptons to proceed and got : "<<electrons->size() + muons->size() + taus->size());
 
   return EL::StatusCode::SUCCESS;
 }
@@ -133,10 +177,22 @@ EL::StatusCode EventSelector :: postExecute ()
 EL::StatusCode EventSelector :: finalize ()
 {
   ATH_MSG_INFO("finalize");
+  if (m_grl) {
+    m_grl = NULL;
+    delete m_grl;
+  }
+
+  if (m_trigDecTool) {
+    m_trigDecTool = NULL;
+    delete m_trigDecTool;
+  }
+
   if (m_var_tool) {
     m_var_tool = NULL;
     delete m_var_tool;
   }
+
+
 
   return EL::StatusCode::SUCCESS;
 }

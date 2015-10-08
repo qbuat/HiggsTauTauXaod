@@ -23,7 +23,8 @@ if __name__ == '__main__':
     # if not ROOT.xAOD.Init().isSuccess():
     #     raise RuntimeError
 
-    sample_name = 'mc15_13TeV.341225.PowhegPythia8EvtGen_CT10_AZNLOCTEQ6L1_ggH125_tautauIncl.merge.AOD.e4044_s2608_r6765_r6282'
+    # sample_name = 'mc15_13TeV.341225.PowhegPythia8EvtGen_CT10_AZNLOCTEQ6L1_ggH125_tautauIncl.merge.AOD.e4044_s2608_r6765_r6282'
+    sample_name = 'data15_13TeV.00276790.physics_Main.merge.DAOD_HIGG4D3.f620_m1480_p2425'
     if args.driver == 'direct':
         print 'grab eos samples'
         # Get SampleHandler from EOS
@@ -59,6 +60,7 @@ if __name__ == '__main__':
 
     main_sel = ROOT.EventSelector()
     main_sel.SetName('Htt_EventSelector')
+    main_sel.trigger_name = 'HLT_tau35_medium1_tracktwo_tau25_medium1_tracktwo_L1TAU20IM_2TAU12IM'
 
     algs = [
         preproc,

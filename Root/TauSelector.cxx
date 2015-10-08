@@ -48,10 +48,6 @@ EL::StatusCode TauSelector :: setupJob (EL::Job& job)
 
 EL::StatusCode TauSelector :: histInitialize ()
 {
-  // Here you do everything that needs to be done at the very
-  // beginning on each worker node, e.g. create histograms and output
-  // trees.  This method gets called before any input files are
-  // connected.
   return EL::StatusCode::SUCCESS;
 }
 
