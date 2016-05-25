@@ -33,7 +33,7 @@ JetCalibrator :: JetCalibrator ()
 EL::StatusCode JetCalibrator :: setupJob (EL::Job& job)
 {
   job.useXAOD ();
-  EL_RETURN_CHECK("setupJob", xAOD::Init("TauSelector"));
+  EL_RETURN_CHECK("setupJob", xAOD::Init("JetCalibrator"));
   return EL::StatusCode::SUCCESS;
 }
 

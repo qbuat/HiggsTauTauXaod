@@ -1,0 +1,32 @@
+#!/usr/bin/env python
+import os
+import uuid
+import argparse
+import shutil
+
+
+if __name__ == '__main__':
+
+   current_dir = os.getcwd()
+
+   list_to_be_deleted = []
+   for d in os.listdir(current_dir):
+      if os.path.isdir(os.path.join(current_dir, d)):
+         if 'run_' in d:
+            list_to_be_deleted.append(d)
+
+   print 'Delete the following:'
+   for d in list_to_be_deleted:
+      print '\t', d
+
+   choice = raw_input("Delete those?\n type y/n and press enter ")
+   print choice
+   if choice == 'y':
+      for d in list_to_be_deleted:
+         print 'delete', d
+         shutil.rmtree(d)
+   elif choice == 'n':
+      print 'nothing is getting deleted'
+   else:
+      raise SyntaxError('wrong input')
+

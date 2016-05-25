@@ -107,7 +107,7 @@ EL::StatusCode JetSelector :: execute ()
   for (const auto jet: *jets) {
       
     // pt cut
-    if (jet->pt() < 30000.) 
+    if (jet->pt() < 20000.) 
       continue;
     
     // eta cut
@@ -115,15 +115,15 @@ EL::StatusCode JetSelector :: execute ()
       continue;
 
     for (auto tau: *taus)
-      if (jet->p4().DeltaR(tau->p4()))
+      if (jet->p4().DeltaR(tau->p4()) < 0.2)
 	continue;
     
     for (auto muon: *muons)
-      if (jet->p4().DeltaR(muon->p4()))
+      if (jet->p4().DeltaR(muon->p4()) < 0.4)
 	continue;
 
     for (auto electron: *electrons)
-      if (jet->p4().DeltaR(electron->p4()))
+      if (jet->p4().DeltaR(electron->p4()) < 0.4)
 	continue;
 
     xAOD::Jet* new_jet = new xAOD::Jet();
@@ -145,9 +145,6 @@ EL::StatusCode JetSelector :: execute ()
 
 EL::StatusCode JetSelector :: postExecute ()
 {
-  // Here you do everything that needs to be done after the main event
-  // processing.  This is typically very rare, particularly in user
-  // code.  It is mainly used in implementing the NTupleSvc.
   return EL::StatusCode::SUCCESS;
 }
 
@@ -163,15 +160,5 @@ EL::StatusCode JetSelector :: finalize ()
 
 EL::StatusCode JetSelector :: histFinalize ()
 {
-  // This method is the mirror image of histInitialize(), meaning it
-  // gets called after the last event has been processed on the worker
-  // node and allows you to finish up any objects you created in
-  // histInitialize() before they are written to disk.  This is
-  // actually fairly rare, since this happens separately for each
-  // worker node.  Most of the time you want to do your
-  // post-processing on the submission node after all your histogram
-  // outputs have been merged.  This is different from finalize() in
-  // that it gets called on all worker nodes regardless of whether
-  // they processed input events.
   return EL::StatusCode::SUCCESS;
 }

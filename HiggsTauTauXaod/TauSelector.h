@@ -5,7 +5,7 @@
 #include <TH1F.h>
 
 #include "TauAnalysisTools/TauTruthMatchingTool.h"
-
+#include "TauAnalysisTools/TauSelectionTool.h"
 
 namespace Trig {
   class TrigDecisionTool;
@@ -21,6 +21,7 @@ public:
   // float cutValue;
 
   std::string trigger_name;
+  std::string tau_conf_name;
 
  private:
   // Trigger Tools
@@ -28,6 +29,7 @@ public:
   Trig::TrigTauMatchingTool *m_trigTauMatchTool; //!
 
   TauAnalysisTools::TauTruthMatchingTool *m_t2mt; //!
+  TauAnalysisTools::TauSelectionTool *m_tausel; //!
 
   // variables that don't get filled at submission time should be
   // protected from being send from the submission node to the worker

@@ -76,6 +76,7 @@ EL::StatusCode TruthTausSelector :: initialize ()
     m_t2mt = asg::ToolStore::get<TauAnalysisTools::TauTruthMatchingTool>("TauTruthMatchingTool");
   } else {
     m_t2mt = new TauAnalysisTools::TauTruthMatchingTool("TauTruthMatchingTool");
+    EL_RETURN_CHECK("initialize", m_t2mt->setProperty("WriteTruthTaus", true));
     EL_RETURN_CHECK("initialize", m_t2mt->initialize());
   }
 

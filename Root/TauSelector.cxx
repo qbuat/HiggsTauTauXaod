@@ -2,7 +2,7 @@
 #include <EventLoop/StatusCode.h>
 #include <EventLoop/Worker.h>
 #include <HiggsTauTauXaod/TauSelector.h>
-#include "TruthUtils/PIDCodes.h"
+// #include "TruthUtils/PIDCodes.h"
 
 
 // xAOD ROOT ACCESS 
@@ -30,7 +30,8 @@ ClassImp(TauSelector)
 
 TauSelector :: TauSelector () : m_trigDecTool(nullptr),
   m_trigTauMatchTool(nullptr),
-  m_t2mt(nullptr)
+  m_t2mt(nullptr),
+  m_tausel(nullptr)
 {
 
 }
@@ -81,6 +82,17 @@ EL::StatusCode TauSelector :: initialize ()
     EL_RETURN_CHECK("initialize", m_t2mt->initialize());
   }
 
+  if (asg::ToolStore::contains<TauAnalysisTools::TauSelectionTool>("TauSelectionTool")) {
+    m_tausel = asg::ToolStore::get<TauAnalysisTools::TauSelectionTool>("TauSelectionTool");
+  } else {
+    m_tausel = new TauAnalysisTools::TauSelectionTool("TauSelectionTool");
+    EL_RETURN_CHECK("initialize", m_tausel->setProperty("ConfigPath", tau_conf_name));
+    EL_RETURN_CHECK("initialize", m_tausel->setProperty("ElectronContainerName", "SelectedElectrons"));
+    EL_RETURN_CHECK("initialize", m_tausel->initialize());
+  }
+
+ 
+
   if (asg::ToolStore::contains<Trig::TrigDecisionTool>("TrigDecisionTool")) { 
     m_trigDecTool = asg::ToolStore::get<Trig::TrigDecisionTool>("TrigDecisionTool");
     ToolHandle<Trig::TrigDecisionTool> trigDecHandle(m_trigDecTool);
@@ -118,11 +130,11 @@ EL::StatusCode TauSelector :: execute ()
   EL_RETURN_CHECK("execute", Utils::retrieve(ei, "EventInfo", event, store));
 
   const xAOD::TauJetContainer* taus = 0;
-  EL_RETURN_CHECK("execute", Utils::retrieve(taus, "TauJets", event, store));
+  EL_RETURN_CHECK("execute", Utils::retrieve(taus, "CalibratedTaus", event, store));
 
   const xAOD::TruthParticleContainer* truths = 0;
   if (ei->eventType(xAOD::EventInfo::IS_SIMULATION))
-    EL_RETURN_CHECK("execute", Utils::retrieve(truths, "SelectedTruthTaus", event, store));
+    EL_RETURN_CHECK("execute", Utils::retrieve(truths, "TruthTaus", event, store));
 
 
   xAOD::TauJetContainer* selected_taus = new xAOD::TauJetContainer();
@@ -136,9 +148,11 @@ EL::StatusCode TauSelector :: execute ()
       if (truth->isTau() and (bool)truth->auxdata<char>("IsHadronicTau")) {
 	const xAOD::TauJet* tau = Utils::match(m_t2mt->getTruthTauP4Vis(*truth), taus);
 	if (tau != NULL) {
-	  xAOD::TauJet* new_tau = new xAOD::TauJet();
-	  new_tau->makePrivateStore(*tau);
-	  selected_taus->push_back(new_tau);
+	  if (m_tausel->accept(tau)) {
+	    xAOD::TauJet* new_tau = new xAOD::TauJet();
+	    new_tau->makePrivateStore(*tau);
+	    selected_taus->push_back(new_tau);
+	  }
 	}
       }
     }    
@@ -195,6 +209,12 @@ EL::StatusCode TauSelector :: finalize ()
     m_t2mt = NULL;
     delete m_t2mt;
   }
+
+  if (m_tausel) {
+    m_tausel = NULL;
+    delete m_tausel;
+  }
+
   return EL::StatusCode::SUCCESS;
 }
 

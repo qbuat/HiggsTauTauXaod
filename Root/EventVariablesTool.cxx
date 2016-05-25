@@ -22,7 +22,7 @@ StatusCode EventVariablesTool::execute(const xAOD::EventInfo * ei,
 				       const xAOD::JetContainer * jets,
 				       const xAOD::MissingET * met)
 {
-  ATH_MSG_INFO( (tau1->p4() + tau2->p4()).Pt());
+  // ATH_MSG_INFO( (tau1->p4() + tau2->p4()).Pt());
 
   // first tau
   ei->auxdecor<double>("tau1_pt") = tau1->pt();
@@ -42,6 +42,11 @@ StatusCode EventVariablesTool::execute(const xAOD::EventInfo * ei,
   ei->auxdecor<double>("delta_r") = tau1->p4().DeltaR(tau2->p4());
   if (m_mmc)
     ATH_MSG_INFO("store MMC result");
+
+  // jets
+  ei->auxdecor<int>("njets") = (int)jets->size();
+
+
 
   return StatusCode::SUCCESS;
 }

@@ -1,5 +1,5 @@
-#ifndef HiggsTauTauXaod_EventSelector_H
-#define HiggsTauTauXaod_EventSelector_H
+#ifndef HiggsTauTauXaod_HadHadSelector_H
+#define HiggsTauTauXaod_HadHadSelector_H
 
 #include <EventLoop/Algorithm.h>
 #include <TH1F.h>
@@ -16,7 +16,7 @@ namespace Trig {
 }
 
 
-class EventSelector : public EL::Algorithm
+class HadHadSelector : public EL::Algorithm
 {
 
 
@@ -24,7 +24,7 @@ class EventSelector : public EL::Algorithm
   // that way they can be set directly from CINT and python.
  public:
   // float cutValue;
-  std::string trigger_name;
+  std::vector<std::string> trigger_names;
 
  private:
   GoodRunsListSelectionTool *m_grl; //!
@@ -43,7 +43,7 @@ public:
 
  
   // this is a standard constructor
-  EventSelector ();
+  HadHadSelector ();
 
   // these are the functions inherited from Algorithm
   virtual EL::StatusCode setupJob (EL::Job& job);
@@ -57,7 +57,7 @@ public:
   virtual EL::StatusCode histFinalize ();
 
   // this is needed to distribute the algorithm to the workers
-  ClassDef(EventSelector, 1);
+  ClassDef(HadHadSelector, 1);
 };
 
 #endif

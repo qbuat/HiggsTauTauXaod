@@ -2,6 +2,7 @@
 #define HiggsTauTauXaod_TauCalibrator_H
 
 #include <EventLoop/Algorithm.h>
+#include "TauAnalysisTools/TauSmearingTool.h"
 
 class TauCalibrator : public EL::Algorithm
 {
@@ -15,6 +16,12 @@ public:
   // variables that don't get filled at submission time should be
   // protected from being send from the submission node to the worker
   // node (done by the //!)
+
+ private:
+  
+  TauAnalysisTools::TauSmearingTool *m_tausmear;//!
+
+
 public:
   // Tree *myTree; //!
   // TH1 *myHist; //!

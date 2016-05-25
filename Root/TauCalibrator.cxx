@@ -3,32 +3,42 @@
 #include <EventLoop/Worker.h>
 #include <HiggsTauTauXaod/TauCalibrator.h>
 
+
+// xAOD ROOT ACCESS 
+#include "xAODRootAccess/Init.h"
+#include "xAODRootAccess/TEvent.h"
+
+// tools
+#include "AsgTools/MsgStream.h"
+#include "AsgTools/MsgStreamMacros.h"
+
+// EDM
+#include "xAODEventInfo/EventInfo.h"
+#include "xAODTruth/TruthParticleContainer.h"
+#include "xAODTau/TauJetContainer.h"
+#include "xAODCore/AuxContainerBase.h"
+
+// Local stuff
+#include "HiggsTauTauXaod/tools.h"
+#include "HiggsTauTauXaod/Utils.h"
+
+
 // this is needed to distribute the algorithm to the workers
 ClassImp(TauCalibrator)
 
 
 
-TauCalibrator :: TauCalibrator ()
+TauCalibrator :: TauCalibrator () : m_tausmear(nullptr)
 {
-  // Here you put any code for the base initialization of variables,
-  // e.g. initialize all pointers to 0.  Note that you should only put
-  // the most basic initialization here, since this method will be
-  // called on both the submission and the worker node.  Most of your
-  // initialization code will go into histInitialize() and
-  // initialize().
+
 }
 
 
 
 EL::StatusCode TauCalibrator :: setupJob (EL::Job& job)
 {
-  // Here you put code that sets up the job on the submission object
-  // so that it is ready to work with your algorithm, e.g. you can
-  // request the D3PDReader service or add output files.  Any code you
-  // put here could instead also go into the submission script.  The
-  // sole advantage of putting it here is that it gets automatically
-  // activated/deactivated when you add/remove the algorithm from your
-  // job, which may or may not be of value to you.
+  job.useXAOD ();
+  EL_RETURN_CHECK("setupJob", xAOD::Init("TauCalibrator"));
   return EL::StatusCode::SUCCESS;
 }
 
@@ -36,10 +46,6 @@ EL::StatusCode TauCalibrator :: setupJob (EL::Job& job)
 
 EL::StatusCode TauCalibrator :: histInitialize ()
 {
-  // Here you do everything that needs to be done at the very
-  // beginning on each worker node, e.g. create histograms and output
-  // trees.  This method gets called before any input files are
-  // connected.
   return EL::StatusCode::SUCCESS;
 }
 
@@ -54,11 +60,8 @@ EL::StatusCode TauCalibrator :: fileExecute ()
 
 
 
-EL::StatusCode TauCalibrator :: changeInput (bool firstFile)
+EL::StatusCode TauCalibrator :: changeInput (bool /*firstFile*/)
 {
-  // Here you do everything you need to do when we change input files,
-  // e.g. resetting branch addresses on trees.  If you are using
-  // D3PDReader or a similar service this method is not needed.
   return EL::StatusCode::SUCCESS;
 }
 
@@ -66,14 +69,13 @@ EL::StatusCode TauCalibrator :: changeInput (bool firstFile)
 
 EL::StatusCode TauCalibrator :: initialize ()
 {
-  // Here you do everything that you need to do after the first input
-  // file has been connected and before the first event is processed,
-  // e.g. create additional histograms based on which variables are
-  // available in the input files.  You can also create all of your
-  // histograms and trees in here, but be aware that this method
-  // doesn't get called if no events are processed.  So any objects
-  // you create here won't be available in the output if you have no
-  // input events.
+  if (asg::ToolStore::contains<TauAnalysisTools::TauSmearingTool>("TauSmearingTool")){
+      m_tausmear = asg::ToolStore::get<TauAnalysisTools::TauSmearingTool>("TauSmearingTool");
+  } else {
+    m_tausmear = new TauAnalysisTools::TauSmearingTool("TauSmearingTool");
+    EL_RETURN_CHECK("initialize", m_tausmear->initialize());
+  }
+
   return EL::StatusCode::SUCCESS;
 }
 
@@ -81,10 +83,36 @@ EL::StatusCode TauCalibrator :: initialize ()
 
 EL::StatusCode TauCalibrator :: execute ()
 {
-  // Here you do everything that needs to be done on every single
-  // events, e.g. read input variables, apply cuts, and fill
-  // histograms and trees.  This is where most of your actual analysis
-  // code will go.
+  ATH_MSG_DEBUG("---------------");
+  ATH_MSG_DEBUG("execute next event: " << wk()->treeEntry());
+  xAOD::TEvent* event = wk()->xaodEvent();
+  xAOD::TStore* store = wk()->xaodStore();
+
+
+  const xAOD::EventInfo * ei = 0;
+  EL_RETURN_CHECK("execute", Utils::retrieve(ei, "EventInfo", event, store));
+
+  const xAOD::TauJetContainer* taus = 0;
+  EL_RETURN_CHECK("execute", Utils::retrieve(taus, "TauJets", event, store));
+
+  const xAOD::TruthParticleContainer* truthtaus = 0;
+  EL_RETURN_CHECK("execute", Utils::retrieve(truthtaus, "TruthTaus", event, store));
+
+  xAOD::TauJetContainer* calibrated_taus = new xAOD::TauJetContainer();
+  xAOD::AuxContainerBase* calibrated_taus_aux = new xAOD::AuxContainerBase();
+  calibrated_taus->setStore(calibrated_taus_aux);
+
+  for (const auto tau: *taus) {
+    xAOD::TauJet* new_tau = new xAOD::TauJet();
+    new_tau->makePrivateStore(*tau);
+    // TO BE FIXED 
+    // m_tausmear->applyCorrection(*new_tau);
+    calibrated_taus->push_back(new_tau);
+  }
+
+  ATH_MSG_DEBUG("Store the selected taus");
+  EL_RETURN_CHECK("execute", store->record(calibrated_taus, "CalibratedTaus"));
+  EL_RETURN_CHECK("execute", store->record(calibrated_taus_aux, "CalibratedTausAux."));
   return EL::StatusCode::SUCCESS;
 }
 
@@ -102,15 +130,11 @@ EL::StatusCode TauCalibrator :: postExecute ()
 
 EL::StatusCode TauCalibrator :: finalize ()
 {
-  // This method is the mirror image of initialize(), meaning it gets
-  // called after the last event has been processed on the worker node
-  // and allows you to finish up any objects you created in
-  // initialize() before they are written to disk.  This is actually
-  // fairly rare, since this happens separately for each worker node.
-  // Most of the time you want to do your post-processing on the
-  // submission node after all your histogram outputs have been
-  // merged.  This is different from histFinalize() in that it only
-  // gets called on worker nodes that processed input events.
+  if (m_tausmear) {
+    m_tausmear = NULL;
+    delete m_tausmear;
+  }
+
   return EL::StatusCode::SUCCESS;
 }
 

@@ -14,7 +14,7 @@
 
 #include <HiggsTauTauXaod/TauCalibrator.h>
 
-#include <HiggsTauTauXaod/EventSelector.h>
+#include <HiggsTauTauXaod/HadHadSelector.h>
 
 #ifdef __CINT__
 
@@ -26,7 +26,7 @@
 #endif
 
 #ifdef __CINT__
-#pragma link C++ class EventSelector+;
+#pragma link C++ class HadHadSelector+;
 #endif
 
 #ifdef __CINT__
