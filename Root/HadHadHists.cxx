@@ -48,8 +48,15 @@ void HadHadHists :: book()
 
   // tau-tau system
   m_h1d["tautau_dr"]    = new TH1F((m_name + "/h_tautau_dr").c_str(), "dr_tau_tau", 16, 0, 3.2); 
+  m_h1d["tautau_deta"]  = new TH1F((m_name + "/h_tautau_deta").c_str(), "deta_tau_tau", 16, 0, 3.2); 
+  m_h1d["tautau_dhi"]   = new TH1F((m_name + "/h_tautau_dphi").c_str(), "dphi_tau_tau", 16, 0, 3.2); 
 
+  // tau-tau + met
+  m_h1d["tautau_met_centrality"]    = new TH1F((m_name + "/h_tautau_met_centrality").c_str(), "met_centrality", 16,-1, 1); 
+  m_h1d["collinear_mass"] = new TH1F((m_name + "/h_collinear_mass").c_str(), "collinear_mass", 40, 0, 200);
 
+  // met
+  m_h1d["met"] = new TH1F((m_name + "/h_met").c_str(), "met", 20, 0, 100);
 }
 
 
@@ -74,6 +81,27 @@ void HadHadHists::fill_tau(const xAOD::TauJet * tau1, const xAOD::TauJet * tau2,
 
   if (tau1 != NULL and tau2 != NULL) 
     m_h1d["tautau_dr"]->Fill(tau1->p4().DeltaR(tau2->p4()), weight);
+}
+
+void HadHadHists::fill_evt(const xAOD::EventInfo* ei)
+
+{
+
+  // tau-tau system
+  m_h1d["tautau_dr"]->Fill(ei->auxdata<double>("delta_r"));  
+  m_h1d["tautau_deta"]->Fill(ei->auxdata<double>("delta_eta")); 
+  m_h1d["tautau_dhi"]->Fill(ei->auxdata<double>("delta_phi"));  
+
+  // tau-tau + met
+  m_h1d["tautau_met_centrality"]->Fill(ei->auxdata<double>("met_centrality"));
+  m_h1d["collinear_mass"]->Fill(ei->auxdata<double>("collinear_mass") / 1000.);
+
+}
+
+void HadHadHists::fill_met(const xAOD::MissingET* met) 
+{
+  m_h1d["met"]->Fill(met->met() / 1000.);
+
 }
 
 

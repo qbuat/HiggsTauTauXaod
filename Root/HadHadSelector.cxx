@@ -68,8 +68,10 @@ EL::StatusCode HadHadSelector :: histInitialize ()
   m_hcutflow->GetXaxis()->SetBinLabel(4, "ntruthtaus");
   m_hcutflow->GetXaxis()->SetBinLabel(5, "ntaus");
   m_hcutflow->GetXaxis()->SetBinLabel(6, "taus_pt");
-  m_hcutflow->GetXaxis()->SetBinLabel(7, "dr_tautau");
-  m_hcutflow->GetXaxis()->SetBinLabel(8, "deta_tautau");
+  m_hcutflow->GetXaxis()->SetBinLabel(7, "met");
+  m_hcutflow->GetXaxis()->SetBinLabel(8, "met_centrality");
+  m_hcutflow->GetXaxis()->SetBinLabel(9, "deta_tautau");
+  m_hcutflow->GetXaxis()->SetBinLabel(10, "dr_tautau");
 
   wk()->addOutput(m_hcutflow);
 
@@ -208,9 +210,30 @@ EL::StatusCode HadHadSelector :: execute ()
 
 
 
+  // // missing Et
+  // if (met->met() > 20000.)
+  //   return EL::StatusCode::SUCCESS;
+
+  m_hcutflow->Fill("met", 1);
+
   // Compute the event level variables
   EL_RETURN_CHECK("execute", m_var_tool->execute(ei, taus->at(0), taus->at(1), jets, met));
 
+
+  // met centrality
+  if (std::min(std::fabs(ei->auxdata<double>("delta_phi_tau1_met")), 
+	       std::fabs(ei->auxdata<double>("delta_phi_tau2_met"))) < TMath::Pi() / 4.
+      or ei->auxdata<double>("met_centrality") >= 1)
+    return EL::StatusCode::SUCCESS;
+  
+  m_hcutflow->Fill("met_centrality", 1);
+
+
+  // deta cut
+  if (ei->auxdata<double>("delta_eta") > 1.5)
+    return EL::StatusCode::SUCCESS;
+
+  m_hcutflow->Fill("deta_tautau", 1);
 
   // DR cut
   if (ei->auxdata<double>("delta_r") < 0.4)
@@ -221,16 +244,10 @@ EL::StatusCode HadHadSelector :: execute ()
 
   m_hcutflow->Fill("dr_tautau", 1);
 
-  // deta cut
-  if (ei->auxdata<double>("delta_eta") > 1.5)
-    return EL::StatusCode::SUCCESS;
-
-  m_hcutflow->Fill("deta_tautau", 1);
-
-
 
   m_book.fill_tau(taus->at(0), taus->at(1));
-
+  m_book.fill_evt(ei);
+  m_book.fill_met(met);
 
   ATH_MSG_DEBUG(Form("N(el) =  %d, N(mu) = %d, N(tau) = %d", (int)electrons->size(), (int)muons->size(), (int)taus->size()));
   ATH_MSG_DEBUG("N(leptons) = "<< (electrons->size() + muons->size() + taus->size()));

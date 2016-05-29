@@ -21,6 +21,10 @@ class EventVariablesTool : public asg::AsgTool
 			     const xAOD::JetContainer * jets,
 			     const xAOD::MissingET * met);
 
+  double METcentrality(const xAOD::IParticle *p1, const xAOD::IParticle *p2, const xAOD::MissingET* met);
+  double DeltaPhi(const xAOD::IParticle* p, const xAOD::MissingET* met);
+  double CollinearMass(const xAOD::IParticle * p1, const xAOD::IParticle *p2, const xAOD::MissingET* met); 
+
  private:
 
   bool m_mmc;

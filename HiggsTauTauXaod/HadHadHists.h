@@ -7,6 +7,7 @@
 
 #include "xAODTau/TauJet.h"
 #include "xAODEventInfo/EventInfo.h"
+#include "xAODMissingET/MissingET.h"
 
 #include <EventLoop/Worker.h>
 
@@ -23,6 +24,7 @@ class HadHadHists
 
   void fill_evt(const xAOD::EventInfo *ei);
   void fill_tau(const xAOD::TauJet * tau1, const xAOD::TauJet* tau2, const double & weight=1.0);
+  void fill_met(const xAOD::MissingET * met);
 
   void record(EL::Worker* wk);
 

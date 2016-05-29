@@ -2,6 +2,7 @@
 #define HiggsTauTauXaod_EventPreProcessor_H
 
 #include <EventLoop/Algorithm.h>
+#include <TH1F.h>
 
 #include "GoodRunsLists/GoodRunsListSelectionTool.h"
 
