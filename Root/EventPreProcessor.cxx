@@ -43,6 +43,12 @@ EL::StatusCode EventPreProcessor :: setupJob (EL::Job& job)
 
 EL::StatusCode EventPreProcessor :: histInitialize ()
 {
+  m_hcutflow = new TH1F("cutflow_preproc", "cutflow_preproc", 10, 0, 10);
+  m_hcutflow->GetXaxis()->SetBinLabel(1, "processed");
+  m_hcutflow->GetXaxis()->SetBinLabel(2, "grl");
+  m_hcutflow->GetXaxis()->SetBinLabel(3, "trigger");
+
+  wk()->addOutput(m_hcutflow);
   return EL::StatusCode::SUCCESS;
 }
 
@@ -100,11 +106,42 @@ EL::StatusCode EventPreProcessor :: execute ()
   ATH_MSG_DEBUG("execute next event: "<< wk()->treeEntry());
 
   xAOD::TEvent* event = wk()->xaodEvent();
-  // xAOD::TStore* store = wk()->xaodStore();
+  xAOD::TStore* store = wk()->xaodStore();
 
   if ((wk()->treeEntry() % 200) == 0)
     ATH_MSG_INFO("Read event number "<< wk()->treeEntry() << " / " << event->getEntries());
 
+  m_hcutflow->Fill("processed", 1);
+
+  if ((wk()->treeEntry() % 200) == 0)
+    ATH_MSG_INFO("Read event number "<< wk()->treeEntry() << " / " << event->getEntries());
+
+  const xAOD::EventInfo * ei = 0;
+  EL_RETURN_CHECK("execute", Utils::retrieve(ei, "EventInfo", event, store));
+
+  // Apply the grl
+  if (not ei->eventType(xAOD::EventInfo::IS_SIMULATION))
+    if (not m_grl->passRunLB(*ei)) {
+	wk()->skipEvent();
+	return EL::StatusCode::SUCCESS;
+    }
+
+  m_hcutflow->Fill("grl", 1);
+
+  // Apply trigger
+  bool is_trigger_passed = false;
+  for (auto trig: trigger_names) {
+    if (m_trigDecTool->isPassed(trig)) {
+      is_trigger_passed = true;
+      break;
+    }
+  }
+  if (not is_trigger_passed) {
+    wk()->skipEvent();
+    return EL::StatusCode::SUCCESS;
+  }
+
+  m_hcutflow->Fill("trigger", 1);
 
   return EL::StatusCode::SUCCESS;
 }

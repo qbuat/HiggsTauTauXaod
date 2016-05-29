@@ -12,6 +12,7 @@
 #include "AsgTools/MsgStreamMacros.h"
 
 // EDM
+#include "xAODBase/IParticleHelpers.h"
 #include "xAODJet/JetContainer.h"
 #include "xAODCore/AuxContainerBase.h"
 
@@ -24,7 +25,8 @@ ClassImp(JetCalibrator)
 
 
 
-JetCalibrator :: JetCalibrator ()
+JetCalibrator :: JetCalibrator () : m_jcl_t(nullptr),
+  m_jca_t(nullptr)
 {
 }
 
@@ -41,10 +43,6 @@ EL::StatusCode JetCalibrator :: setupJob (EL::Job& job)
 
 EL::StatusCode JetCalibrator :: histInitialize ()
 {
-  // Here you do everything that needs to be done at the very
-  // beginning on each worker node, e.g. create histograms and output
-  // trees.  This method gets called before any input files are
-  // connected.
   return EL::StatusCode::SUCCESS;
 }
 
@@ -52,8 +50,6 @@ EL::StatusCode JetCalibrator :: histInitialize ()
 
 EL::StatusCode JetCalibrator :: fileExecute ()
 {
-  // Here you do everything that needs to be done exactly once for every
-  // single file, e.g. collect a list of all lumi-blocks processed
   return EL::StatusCode::SUCCESS;
 }
 
@@ -61,9 +57,6 @@ EL::StatusCode JetCalibrator :: fileExecute ()
 
 EL::StatusCode JetCalibrator :: changeInput (bool /*firstFile*/)
 {
-  // Here you do everything you need to do when we change input files,
-  // e.g. resetting branch addresses on trees.  If you are using
-  // D3PDReader or a similar service this method is not needed.
   return EL::StatusCode::SUCCESS;
 }
 
@@ -100,10 +93,40 @@ EL::StatusCode JetCalibrator :: initialize ()
 
 EL::StatusCode JetCalibrator :: execute ()
 {
-  // Here you do everything that needs to be done on every single
-  // events, e.g. read input variables, apply cuts, and fill
-  // histograms and trees.  This is where most of your actual analysis
-  // code will go.
+  ATH_MSG_DEBUG("---------------");
+  ATH_MSG_DEBUG("execute next event: " << wk()->treeEntry());
+  xAOD::TEvent* event = wk()->xaodEvent();
+  xAOD::TStore* store = wk()->xaodStore();
+
+  const xAOD::JetContainer* jets = 0;
+  EL_RETURN_CHECK("execute", Utils::retrieve(jets, "AntiKt4LCTopoJets", event, store));
+
+  // create output container with selected jets
+  xAOD::JetContainer* calib_jets = new xAOD::JetContainer();
+  xAOD::AuxContainerBase* calib_jets_aux = new xAOD::AuxContainerBase();
+  calib_jets->setStore(calib_jets_aux);
+
+  for (const auto jet: *jets) {
+    if (m_jcl_t->accept(*jet)) {
+      xAOD::Jet* new_jet = 0; //new xAOD::Jet();
+      m_jca_t->calibratedCopy(*jet, new_jet);
+      // new_jet->makePrivateStore(*jet);
+
+      // m_jca_t->applyCorrection(*new_jet);
+      calib_jets->push_back(new_jet);
+      if (not xAOD::setOriginalObjectLink(*jet, *new_jet)) {
+	ATH_MSG_ERROR("Fail to set the links");
+	return EL::StatusCode::FAILURE;
+      }
+    }
+  }
+  
+  
+  ATH_MSG_DEBUG("Store the calibrated jets");
+  EL_RETURN_CHECK("execute", store->record(calib_jets, "CalibratedJets"));
+  EL_RETURN_CHECK("execute", store->record(calib_jets_aux, "CalibratedJetsAux."));
+
+
   return EL::StatusCode::SUCCESS;
 }
 

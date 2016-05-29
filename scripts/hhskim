@@ -42,6 +42,9 @@ if __name__ == '__main__':
     preproc = ROOT.EventPreProcessor()
     preproc.SetName('Htt_EventPreProcessor')
     preproc.grl_file = 'HiggsTauTauXaod/share/data15_13TeV.periodAllYear_DetStatus-v65-pro19-01_DQDefects-00-01-02_PHYS_StandardGRL_All_Good.xml'
+    preproc.trigger_names = to_str_vec([
+            #'HLT_tau35_medium1_tracktwo_tau25_medium1_tracktwo_L1TAU20IM_2TAU12IM',
+            'HLT_tau35_medium1_tracktwo_tau25_medium1_tracktwo'])
 
     truth_sel = ROOT.TruthTausSelector()
     truth_sel.SetName('Htt_TruthTausSelector')
@@ -61,14 +64,20 @@ if __name__ == '__main__':
     tau_sel.trigger_name = 'HLT_tau35_medium1_tracktwo_tau25_medium1_tracktwo_L1TAU20IM_2TAU12IM'
     tau_sel.tau_conf_name = 'HiggsTauTauXaod/share/tau_selection.conf'
 
+    jet_calib = ROOT.JetCalibrator()
+    jet_calib.SetName('Htt_JetCalibrator')
+
     jet_sel = ROOT.JetSelector()
     jet_sel.SetName('Htt_JetSelector')
 
 
+    met_calc = ROOT.MetCalculator()
+    met_calc.SetName('Htt_MetCalculator')
+
     main_sel = ROOT.HadHadSelector()
     main_sel.SetName('Htt_HadHadSelector')
     main_sel.trigger_names = to_str_vec([
-            'HLT_tau35_medium1_tracktwo_tau25_medium1_tracktwo_L1TAU20IM_2TAU12IM',
+            #'HLT_tau35_medium1_tracktwo_tau25_medium1_tracktwo_L1TAU20IM_2TAU12IM',
             'HLT_tau35_medium1_tracktwo_tau25_medium1_tracktwo'])
             
 
@@ -79,7 +88,9 @@ if __name__ == '__main__':
         muon_sel,
         tau_calib,
         tau_sel,
+        jet_calib,
         jet_sel,
+        met_calc,
         main_sel,
         ]
 
@@ -96,11 +107,13 @@ if __name__ == '__main__':
     job = ROOT.EL.Job()
     job.sampleHandler(sample)
     for alg in algs:
+        print 'add', alg.GetName()
         job.algsAdd(alg)
 
-    # out = ROOT.EL.OutputStream("hist-output", "xAOD");
+    # out = ROOT.EL.OutputStream("outputLabel", "xAOD");
     # out.options().setString(ROOT.EL.OutputStream.optContainerSuffix, "out");
     # job.outputAdd(out);
+    # print 'output added'
 
     # Set the access mode
     job.options().setString(ROOT.EL.Job.optXaodAccessMode, ROOT.EL.Job.optXaodAccessMode_athena)

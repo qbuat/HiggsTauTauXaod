@@ -46,7 +46,12 @@ StatusCode EventVariablesTool::execute(const xAOD::EventInfo * ei,
   // jets
   ei->auxdecor<int>("njets") = (int)jets->size();
 
-
+  int njets25 = 0;
+  for (const auto* j: *jets) {
+    if (j->pt() > 25000.) 
+      njets25++;
+  }
+  ei->auxdecor<int>("njets25") = njets25;
 
   return StatusCode::SUCCESS;
 }

@@ -1,3 +1,7 @@
+#include <HiggsTauTauXaod/HadHadHists.h>
+
+#include <HiggsTauTauXaod/MetCalculator.h>
+
 #include <HiggsTauTauXaod/EventPreProcessor.h>
 
 #include <HiggsTauTauXaod/JetCalibrator.h>
@@ -60,4 +64,12 @@
 
 #ifdef __CINT__
 #pragma link C++ class EventPreProcessor+;
+#endif
+
+#ifdef __CINT__
+#pragma link C++ class MetCalculator+;
+#endif
+
+#ifdef __CINT__
+#pragma link C++ class HadHadHists+;
 #endif

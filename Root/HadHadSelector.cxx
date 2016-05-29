@@ -8,6 +8,9 @@
 #include "xAODRootAccess/Init.h"
 #include "xAODRootAccess/TEvent.h"
 
+// EventLoop stuff
+#include "EventLoop/OutputStream.h"
+
 // EDM
 #include "xAODEventInfo/EventInfo.h"
 #include "xAODTau/TauJetContainer.h"
@@ -33,7 +36,8 @@ ClassImp(HadHadSelector)
 
 HadHadSelector :: HadHadSelector () : m_grl(nullptr),
   m_trigDecTool(nullptr),
-  m_var_tool(nullptr)
+  m_var_tool(nullptr),
+  m_book("Htt_book")
 {
 
 }
@@ -45,6 +49,10 @@ EL::StatusCode HadHadSelector :: setupJob (EL::Job& job)
 
   job.useXAOD ();
   EL_RETURN_CHECK("setupJob", xAOD::Init("HadHadSelector"));
+
+  // EL::OutputStream out("hist", "xAOD");
+  // job.outputAdd(out);
+
   return EL::StatusCode::SUCCESS;
 }
 
@@ -53,21 +61,20 @@ EL::StatusCode HadHadSelector :: setupJob (EL::Job& job)
 EL::StatusCode HadHadSelector :: histInitialize ()
 {
 
-  m_htaus = new TH1F("ntaus", "ntaus", 10, 0, 10);
-
   m_hcutflow = new TH1F("cutflow", "cutflow", 10, 0, 10);
   m_hcutflow->GetXaxis()->SetBinLabel(1, "processed");
   m_hcutflow->GetXaxis()->SetBinLabel(2, "grl");
-  m_hcutflow->GetXaxis()->SetBinLabel(3, "ntruthtaus");
-  m_hcutflow->GetXaxis()->SetBinLabel(4, "ntaus");
-  m_hcutflow->GetXaxis()->SetBinLabel(5, "taus_pt");
-  m_hcutflow->GetXaxis()->SetBinLabel(6, "taus_id");
+  m_hcutflow->GetXaxis()->SetBinLabel(3, "trigger");
+  m_hcutflow->GetXaxis()->SetBinLabel(4, "ntruthtaus");
+  m_hcutflow->GetXaxis()->SetBinLabel(5, "ntaus");
+  m_hcutflow->GetXaxis()->SetBinLabel(6, "taus_pt");
   m_hcutflow->GetXaxis()->SetBinLabel(7, "dr_tautau");
   m_hcutflow->GetXaxis()->SetBinLabel(8, "deta_tautau");
-  m_hcutflow->GetXaxis()->SetBinLabel(9, "trigger");
 
-  wk()->addOutput(m_htaus);
   wk()->addOutput(m_hcutflow);
+
+  m_book.book();
+  m_book.record(wk());
 
   return EL::StatusCode::SUCCESS;
 }
@@ -91,6 +98,9 @@ EL::StatusCode HadHadSelector :: changeInput (bool /*firstFile*/)
 EL::StatusCode HadHadSelector :: initialize ()
 {
 
+  store = wk()->xaodStore();
+  event = wk()->xaodEvent();
+
   if (asg::ToolStore::contains<EventVariablesTool>("EventVariablesTool")) {
     m_var_tool = asg::ToolStore::get<EventVariablesTool>("EventVariablesTool");
   } else {
@@ -112,6 +122,10 @@ EL::StatusCode HadHadSelector :: initialize ()
     return EL::StatusCode::FAILURE;
   }
 
+  // TFile *file = wk()->getOutputFile ("hist");
+  // event = wk()->xaodEvent();
+  // EL_RETURN_CHECK("initialize", event->writeTo(file));
+
   ATH_MSG_INFO("Initialization completed");
   return EL::StatusCode::SUCCESS;
 }
@@ -120,8 +134,7 @@ EL::StatusCode HadHadSelector :: initialize ()
 
 EL::StatusCode HadHadSelector :: execute ()
 {
-  xAOD::TEvent* event = wk()->xaodEvent();
-  xAOD::TStore* store = wk()->xaodStore();
+  // event = wk()->xaodEvent();
 
   m_hcutflow->Fill("processed", 1);
   if ((wk()->treeEntry() % 200) == 0)
@@ -136,6 +149,22 @@ EL::StatusCode HadHadSelector :: execute ()
 	return EL::StatusCode::SUCCESS;
 
   m_hcutflow->Fill("grl", 1);
+
+  // Apply trigger
+  bool is_trigger_passed = false;
+  for (auto trig: trigger_names) {
+    if (m_trigDecTool->isPassed(trig)) {
+      is_trigger_passed = true;
+      break;
+    }
+  }
+  if (not is_trigger_passed)
+    return EL::StatusCode::SUCCESS;
+
+  // if (not m_trigDecTool->isPassed(trigger_name))
+  //   return EL::StatusCode::SUCCESS;
+
+  m_hcutflow->Fill("trigger", 1);
 
 
   // Retrieve the containers we may need
@@ -156,9 +185,8 @@ EL::StatusCode HadHadSelector :: execute ()
 
   // TODO: proper MET constructor with the tool
   const xAOD::MissingETContainer * mets = 0;
-  EL_RETURN_CHECK("execute", Utils::retrieve(mets, "MET_Reference_AntiKt4LCTopo", event, store));
-  const xAOD::MissingET * met = *mets->find("Final");
-
+  EL_RETURN_CHECK("execute", Utils::retrieve(mets, "NewMet", event, store));
+  const xAOD::MissingET * met = *mets->find("FinalClus");
 
   if (truth_taus->size() !=2) 
     return EL::StatusCode::SUCCESS;
@@ -179,18 +207,10 @@ EL::StatusCode HadHadSelector :: execute ()
   m_hcutflow->Fill("taus_pt", 1);
 
 
-  // tau id cuts
-  if (not taus->at(0)->isTau(xAOD::TauJetParameters::JetBDTSigMedium))
-    return EL::StatusCode::SUCCESS;
-
-  if (not taus->at(1)->isTau(xAOD::TauJetParameters::JetBDTSigMedium))
-    return EL::StatusCode::SUCCESS;
-
-  m_hcutflow->Fill("taus_id", 1);
-
 
   // Compute the event level variables
   EL_RETURN_CHECK("execute", m_var_tool->execute(ei, taus->at(0), taus->at(1), jets, met));
+
 
   // DR cut
   if (ei->auxdata<double>("delta_r") < 0.4)
@@ -201,7 +221,7 @@ EL::StatusCode HadHadSelector :: execute ()
 
   m_hcutflow->Fill("dr_tautau", 1);
 
-  // DETA cut
+  // deta cut
   if (ei->auxdata<double>("delta_eta") > 1.5)
     return EL::StatusCode::SUCCESS;
 
@@ -209,26 +229,19 @@ EL::StatusCode HadHadSelector :: execute ()
 
 
 
-  // Apply trigger
-  for (auto trig: trigger_names) {
-    if (m_trigDecTool->isPassed(trig))
-      ATH_MSG_INFO("passed "<< trig);
-  }
-  // if (not m_trigDecTool->isPassed(trigger_name))
-  //   return EL::StatusCode::SUCCESS;
-
-  m_hcutflow->Fill("trigger", 1);
-
-
-
-  // ATH_MSG_INFO(Form("N(taus) = %d", (int)taus->size()));
-  m_htaus->Fill(taus->size());
+  m_book.fill_tau(taus->at(0), taus->at(1));
 
 
   ATH_MSG_DEBUG(Form("N(el) =  %d, N(mu) = %d, N(tau) = %d", (int)electrons->size(), (int)muons->size(), (int)taus->size()));
   ATH_MSG_DEBUG("N(leptons) = "<< (electrons->size() + muons->size() + taus->size()));
   // if (electrons->size() + muons->size() + taus->size() != 2)
   //   ATH_MSG_ERROR("Need exactly two leptons to proceed and got : "<<electrons->size() + muons->size() + taus->size());
+
+
+  // EL_RETURN_CHECK("execute", event->copy("EventInfo"));
+  // ATH_MSG_INFO("fill event "<< wk()->treeEntry());
+  // event->fill();
+  
 
   return EL::StatusCode::SUCCESS;
 }
@@ -245,6 +258,10 @@ EL::StatusCode HadHadSelector :: postExecute ()
 EL::StatusCode HadHadSelector :: finalize ()
 {
   ATH_MSG_INFO("finalize");
+
+  // TFile *file = wk()->getOutputFile ("hist");
+  // xAOD::TEvent* event = wk()->xaodEvent();
+  // EL_RETURN_CHECK("finalize", event->finishWritingTo( file ));
   if (m_grl) {
     m_grl = NULL;
     delete m_grl;
@@ -259,10 +276,8 @@ EL::StatusCode HadHadSelector :: finalize ()
     m_var_tool = NULL;
     delete m_var_tool;
   }
-
-
-
   return EL::StatusCode::SUCCESS;
+
 }
 
 

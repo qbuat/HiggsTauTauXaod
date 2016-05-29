@@ -80,7 +80,7 @@ EL::StatusCode TruthTausSelector :: initialize ()
     EL_RETURN_CHECK("initialize", m_t2mt->initialize());
   }
 
-  xAOD::TEvent* event = wk()->xaodEvent();
+  // xAOD::TEvent* event = wk()->xaodEvent();
 
   return EL::StatusCode::SUCCESS;
 }

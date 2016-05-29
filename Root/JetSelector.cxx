@@ -9,6 +9,7 @@
 #include "AsgTools/MsgStream.h"
 #include "AsgTools/MsgStreamMacros.h"
 
+
 // EDM
 #include "xAODTau/TauJetContainer.h"
 #include "xAODMuon/MuonContainer.h"
@@ -88,7 +89,8 @@ EL::StatusCode JetSelector :: execute ()
 
   // retrieve previously stored containers
   const xAOD::JetContainer* jets = 0;
-  EL_RETURN_CHECK("execute", Utils::retrieve(jets, "AntiKt4LCTopoJets", event, store));
+  EL_RETURN_CHECK("execute", Utils::retrieve(jets, "CalibratedJets", event, store));
+  // EL_RETURN_CHECK("execute", Utils::retrieve(jets, "AntiKt4LCTopoJets", event, store));
 
   const xAOD::TauJetContainer* taus = 0;
   EL_RETURN_CHECK("execute", Utils::retrieve(taus, "SelectedTaus", event, store));
@@ -130,8 +132,8 @@ EL::StatusCode JetSelector :: execute ()
     new_jet->makePrivateStore(*jet);
     selected_jets->push_back(new_jet);
   }
-  // sort them by pT
-  selected_jets->sort(Utils::comparePt);
+  // // sort them by pT
+  // selected_jets->sort(Utils::comparePt);
 
 
   ATH_MSG_DEBUG("Store the selected jets");

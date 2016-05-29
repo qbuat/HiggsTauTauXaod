@@ -3,13 +3,17 @@
 
 #include <EventLoop/Algorithm.h>
 #include <TH1F.h>
+#include "EventLoop/OutputStream.h"
 
 #include "xAODJet/JetContainer.h"
 #include "xAODTau/TauJetContainer.h"
 
 #include "HiggsTauTauXaod/EventVariablesTool.h"
+#include "HiggsTauTauXaod/HadHadHists.h"
 
 #include "GoodRunsLists/GoodRunsListSelectionTool.h"
+#include "xAODRootAccess/TEvent.h"
+#include "xAODRootAccess/TStore.h"
 
 namespace Trig {
   class TrigDecisionTool;
@@ -31,15 +35,17 @@ class HadHadSelector : public EL::Algorithm
   Trig::TrigDecisionTool *m_trigDecTool; //!
   EventVariablesTool *m_var_tool; //!
 
+  xAOD::TEvent * event;//!
+  xAOD::TStore * store;//!
+
+  HadHadHists m_book;//!
+
   // variables that don't get filled at submission time should be
   // protected from being send from the submission node to the worker
   // node (done by the //!)
 public:
 
-  TH1F* m_htaus; //!
   TH1F* m_hcutflow; //!
-  // Tree *myTree; //!
-  // TH1 *myHist; //!
 
  
   // this is a standard constructor
