@@ -22,9 +22,9 @@ class HadHadHists
 
   void book();
 
-  void fill_evt(const xAOD::EventInfo *ei);
-  void fill_tau(const xAOD::TauJet * tau1, const xAOD::TauJet* tau2, const double & weight=1.0);
-  void fill_met(const xAOD::MissingET * met);
+  void fill_evt(const xAOD::EventInfo *ei, const double & weight = 1.0);
+  void fill_tau(const xAOD::TauJet * tau1, const xAOD::TauJet* tau2, const double & weight = 1.0);
+  void fill_met(const xAOD::MissingET * met, const double & weight = 1.0);
 
   void record(EL::Worker* wk);
 

@@ -14,6 +14,7 @@
 #include "GoodRunsLists/GoodRunsListSelectionTool.h"
 #include "xAODRootAccess/TEvent.h"
 #include "xAODRootAccess/TStore.h"
+#include "DiTauMassTools/MissingMassTool.h"
 
 namespace Trig {
   class TrigDecisionTool;
@@ -34,6 +35,7 @@ class HadHadSelector : public EL::Algorithm
   GoodRunsListSelectionTool *m_grl; //!
   Trig::TrigDecisionTool *m_trigDecTool; //!
   EventVariablesTool *m_var_tool; //!
+  MissingMassTool *m_mmc_tool;//!
 
   xAOD::TEvent * event;//!
   xAOD::TStore * store;//!

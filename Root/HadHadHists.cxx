@@ -54,6 +54,7 @@ void HadHadHists :: book()
   // tau-tau + met
   m_h1d["tautau_met_centrality"]    = new TH1F((m_name + "/h_tautau_met_centrality").c_str(), "met_centrality", 16,-1, 1); 
   m_h1d["collinear_mass"] = new TH1F((m_name + "/h_collinear_mass").c_str(), "collinear_mass", 40, 0, 200);
+  m_h1d["mmc_mass"] = new TH1F((m_name + "/h_mmc_mass").c_str(), "mmc_mass", 40, 0, 200);
 
   // met
   m_h1d["met"] = new TH1F((m_name + "/h_met").c_str(), "met", 20, 0, 100);
@@ -83,24 +84,24 @@ void HadHadHists::fill_tau(const xAOD::TauJet * tau1, const xAOD::TauJet * tau2,
     m_h1d["tautau_dr"]->Fill(tau1->p4().DeltaR(tau2->p4()), weight);
 }
 
-void HadHadHists::fill_evt(const xAOD::EventInfo* ei)
+void HadHadHists::fill_evt(const xAOD::EventInfo* ei, const double & weight)
 
 {
 
   // tau-tau system
-  m_h1d["tautau_dr"]->Fill(ei->auxdata<double>("delta_r"));  
-  m_h1d["tautau_deta"]->Fill(ei->auxdata<double>("delta_eta")); 
-  m_h1d["tautau_dhi"]->Fill(ei->auxdata<double>("delta_phi"));  
+  m_h1d["tautau_dr"]->Fill(ei->auxdata<double>("delta_r"), weight);  
+  m_h1d["tautau_deta"]->Fill(ei->auxdata<double>("delta_eta"), weight); 
+  m_h1d["tautau_dhi"]->Fill(ei->auxdata<double>("delta_phi"), weight);  
 
   // tau-tau + met
-  m_h1d["tautau_met_centrality"]->Fill(ei->auxdata<double>("met_centrality"));
-  m_h1d["collinear_mass"]->Fill(ei->auxdata<double>("collinear_mass") / 1000.);
-
+  m_h1d["tautau_met_centrality"]->Fill(ei->auxdata<double>("met_centrality"), weight);
+  m_h1d["collinear_mass"]->Fill(ei->auxdata<double>("collinear_mass") / 1000., weight);
+  m_h1d["mmc_mass"]->Fill(ei->auxdata<double>("mmc_maxw_mass"), weight);
 }
 
-void HadHadHists::fill_met(const xAOD::MissingET* met) 
+void HadHadHists::fill_met(const xAOD::MissingET* met, const double & weight) 
 {
-  m_h1d["met"]->Fill(met->met() / 1000.);
+  m_h1d["met"]->Fill(met->met() / 1000., weight);
 
 }
 
@@ -110,7 +111,7 @@ void HadHadHists::fill_met(const xAOD::MissingET* met)
 void HadHadHists::record(EL::Worker* wk)
 {
   for (auto h: m_h1d) {
-    std::cout << h.second->GetName() << std::endl;
+    // std::cout << h.second->GetName() << std::endl;
     wk->addOutput(h.second);
   }
 }

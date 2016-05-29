@@ -110,6 +110,15 @@ EL::StatusCode HadHadSelector :: initialize ()
     EL_RETURN_CHECK("initialize", m_var_tool->initialize());
   }
 
+  if (asg::ToolStore::contains<MissingMassTool>("MissingMassTool")) {
+    m_mmc_tool = asg::ToolStore::get<MissingMassTool>("MissingMassTool");
+  } else {
+    m_mmc_tool = new MissingMassTool("MissingMassTool");
+    EL_RETURN_CHECK("initialize", m_mmc_tool->setProperty("Decorate", true));
+    EL_RETURN_CHECK("initialize", m_mmc_tool->initialize());
+  }
+
+
   if (asg::ToolStore::contains<Trig::TrigDecisionTool>("TrigDecisionTool")) {
     m_trigDecTool = asg::ToolStore::get<Trig::TrigDecisionTool>("TrigDecisionTool");
   } else {
@@ -123,6 +132,9 @@ EL::StatusCode HadHadSelector :: initialize ()
     ATH_MSG_ERROR("The GRL tool needs to be initialized");
     return EL::StatusCode::FAILURE;
   }
+
+
+
 
   // TFile *file = wk()->getOutputFile ("hist");
   // event = wk()->xaodEvent();
@@ -245,6 +257,9 @@ EL::StatusCode HadHadSelector :: execute ()
   m_hcutflow->Fill("dr_tautau", 1);
 
 
+  m_mmc_tool->apply(*ei, taus->at(0), taus->at(1), met, ei->auxdata<int>("njets25"));
+
+
   m_book.fill_tau(taus->at(0), taus->at(1));
   m_book.fill_evt(ei);
   m_book.fill_met(met);
@@ -293,6 +308,12 @@ EL::StatusCode HadHadSelector :: finalize ()
     m_var_tool = NULL;
     delete m_var_tool;
   }
+
+  if (m_mmc_tool) {
+    m_mmc_tool = NULL;
+    delete m_mmc_tool;
+  }
+
   return EL::StatusCode::SUCCESS;
 
 }

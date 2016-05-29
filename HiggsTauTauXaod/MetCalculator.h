@@ -10,7 +10,7 @@ class MetCalculator : public EL::Algorithm
   // that way they can be set directly from CINT and python.
 
  private:
-  met::METMaker *m_metmaker;
+  met::METMaker *m_metmaker;//!
   
  public:
   // float cutValue;

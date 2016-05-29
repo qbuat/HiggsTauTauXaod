@@ -21,8 +21,8 @@ public:
   // Tree *myTree; //!
   // TH1 *myHist; //!
 
-  JetCleaningTool *m_jcl_t;
-  JetCalibrationTool *m_jca_t;
+  JetCleaningTool *m_jcl_t;//!
+  JetCalibrationTool *m_jca_t;//!
 
   // this is a standard constructor
   JetCalibrator ();
