@@ -57,7 +57,7 @@ void HadHadHists :: book()
   m_h1d["mmc_mass"] = new TH1F((m_name + "/h_mmc_mass").c_str(), "mmc_mass", 40, 0, 200);
 
   // met
-  m_h1d["met"] = new TH1F((m_name + "/h_met").c_str(), "met", 20, 0, 100);
+  m_h1d["met"] = new TH1F((m_name + "/h_met").c_str(), "met", 20, 0, 200);
 }
 
 
