@@ -104,7 +104,7 @@ EL::StatusCode MetCalculator :: execute ()
   EL_RETURN_CHECK("execute", Utils::retrieve(taus, "SelectedTaus", event, store));
 
   const xAOD::JetContainer* jets = 0;
-  EL_RETURN_CHECK("execute", Utils::retrieve(jets, "SelectedJets", event, store));
+  EL_RETURN_CHECK("execute", Utils::retrieve(jets, "CalibratedJets", event, store));
 
   const xAOD::MuonContainer* muons = 0;
   EL_RETURN_CHECK("execute", Utils::retrieve(muons, "SelectedMuons", event, store));
@@ -145,7 +145,7 @@ EL::StatusCode MetCalculator :: execute ()
 
   // jets (no jvt yet)
   if (jets->size() != 0) {
-    EL_RETURN_CHECK("execute", m_metmaker->rebuildJetMET("RefJet", "SoftClus", "PVSoftTrk", newMet, jets, core_met, metMap, false));
+    EL_RETURN_CHECK("execute", m_metmaker->rebuildJetMET("RefJet", "SoftClus", newMet, jets, core_met, metMap, false));
   }
 
 

@@ -104,7 +104,7 @@ EL::StatusCode MuonSelector :: execute ()
 
   const xAOD::TruthParticleContainer* truths = 0;
   if (ei->eventType(xAOD::EventInfo::IS_SIMULATION))
-    EL_RETURN_CHECK("execute", Utils::retrieve(truths, "SelectedTruthTaus", event, store));
+    EL_RETURN_CHECK("execute", Utils::retrieve(truths, "TruthTaus", event, store));
 
   xAOD::MuonContainer* selected_muons = new xAOD::MuonContainer();
   xAOD::AuxContainerBase* selected_muons_aux = new xAOD::AuxContainerBase();

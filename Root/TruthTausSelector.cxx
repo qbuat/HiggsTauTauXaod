@@ -106,39 +106,39 @@ EL::StatusCode TruthTausSelector :: execute ()
   // event initialization of the tools (if needed)
   EL_RETURN_CHECK("execute", m_t2mt->initializeEvent());
 
-  xAOD::TruthParticleContainer* xTruthTauContainer = m_t2mt->getTruthTauContainer();
+  // xAOD::TruthParticleContainer* xTruthTauContainer = m_t2mt->getTruthTauContainer();
 
-  if (xTruthTauContainer->size() < 2) {
-    ATH_MSG_WARNING("Something is wrong with the truth matching !");
-    for (auto p: *xTruthTauContainer) {
-      ATH_MSG_WARNING(Form("Idx = %d, pT = %f, eta = %f, phi = %f, pdgId = %d, status = %d", 
-			   (int)p->index(), p->pt(), p->eta(), p->phi(), p->pdgId(), p->status()));
-    }
-    return EL::StatusCode::SUCCESS;
-  }
+  // if (xTruthTauContainer->size() < 2) {
+  //   ATH_MSG_WARNING("Something is wrong with the truth matching !");
+  //   for (auto p: *xTruthTauContainer) {
+  //     ATH_MSG_WARNING(Form("Idx = %d, pT = %f, eta = %f, phi = %f, pdgId = %d, status = %d", 
+  // 			   (int)p->index(), p->pt(), p->eta(), p->phi(), p->pdgId(), p->status()));
+  //   }
+  //   return EL::StatusCode::SUCCESS;
+  // }
 
   
-  // sort the truth taus and select only the first 2
-  // TODO: to be generalized 
-  xTruthTauContainer->sort(Utils::comparePt);
-  xAOD::TruthParticle* truth1 = xTruthTauContainer->at(0);
-  xAOD::TruthParticle* truth2 = xTruthTauContainer->at(1);
+  // // sort the truth taus and select only the first 2
+  // // TODO: to be generalized 
+  // xTruthTauContainer->sort(Utils::comparePt);
+  // xAOD::TruthParticle* truth1 = xTruthTauContainer->at(0);
+  // xAOD::TruthParticle* truth2 = xTruthTauContainer->at(1);
   
-  xAOD::TruthParticleContainer* selected_truth = new xAOD::TruthParticleContainer() ;
-  xAOD::AuxContainerBase* selected_truth_aux = new xAOD::AuxContainerBase();
-  selected_truth->setStore(selected_truth_aux);
+  // xAOD::TruthParticleContainer* selected_truth = new xAOD::TruthParticleContainer() ;
+  // xAOD::AuxContainerBase* selected_truth_aux = new xAOD::AuxContainerBase();
+  // selected_truth->setStore(selected_truth_aux);
 
-  xAOD::TruthParticle* new_truth1 = new xAOD::TruthParticle();
-  new_truth1->makePrivateStore(*truth1);
-  selected_truth->push_back(new_truth1);
+  // xAOD::TruthParticle* new_truth1 = new xAOD::TruthParticle();
+  // new_truth1->makePrivateStore(*truth1);
+  // selected_truth->push_back(new_truth1);
 
-  xAOD::TruthParticle* new_truth2 = new xAOD::TruthParticle();
-  new_truth2->makePrivateStore(*truth2);
-  selected_truth->push_back(new_truth2);
+  // xAOD::TruthParticle* new_truth2 = new xAOD::TruthParticle();
+  // new_truth2->makePrivateStore(*truth2);
+  // selected_truth->push_back(new_truth2);
 
-  ATH_MSG_DEBUG("Store the selected truth taus");
-  EL_RETURN_CHECK("execute", store->record(selected_truth, "SelectedTruthTaus"));
-  EL_RETURN_CHECK("execute", store->record(selected_truth_aux, "SelectedTruthTausAux."));
+  // ATH_MSG_DEBUG("Store the selected truth taus");
+  // EL_RETURN_CHECK("execute", store->record(selected_truth, "SelectedTruthTaus"));
+  // EL_RETURN_CHECK("execute", store->record(selected_truth_aux, "SelectedTruthTausAux."));
 
 
   return EL::StatusCode::SUCCESS;

@@ -54,6 +54,7 @@ void HadHadHists :: book()
   // tau-tau + met
   m_h1d["tautau_met_centrality"]    = new TH1F((m_name + "/h_tautau_met_centrality").c_str(), "met_centrality", 16,-1, 1); 
   m_h1d["collinear_mass"] = new TH1F((m_name + "/h_collinear_mass").c_str(), "collinear_mass", 40, 0, 200);
+  m_h1d["visible_mass"] = new TH1F((m_name + "/h_visible_mass").c_str(), "visible_mass", 40, 0, 200);
   m_h1d["mmc_mass"] = new TH1F((m_name + "/h_mmc_mass").c_str(), "mmc_mass", 40, 0, 200);
 
   // met
@@ -96,6 +97,7 @@ void HadHadHists::fill_evt(const xAOD::EventInfo* ei, const double & weight)
   // tau-tau + met
   m_h1d["tautau_met_centrality"]->Fill(ei->auxdata<double>("met_centrality"), weight);
   m_h1d["collinear_mass"]->Fill(ei->auxdata<double>("collinear_mass") / 1000., weight);
+  m_h1d["visible_mass"]->Fill(ei->auxdata<double>("visible_mass") / 1000., weight);
   m_h1d["mmc_mass"]->Fill(ei->auxdata<double>("mmc_maxw_mass"), weight);
 }
 

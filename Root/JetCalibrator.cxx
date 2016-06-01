@@ -25,8 +25,7 @@ ClassImp(JetCalibrator)
 
 
 
-JetCalibrator :: JetCalibrator () : m_jcl_t(nullptr),
-  m_jca_t(nullptr)
+JetCalibrator :: JetCalibrator () : m_jca_t(nullptr)
 {
 }
 
@@ -64,14 +63,6 @@ EL::StatusCode JetCalibrator :: changeInput (bool /*firstFile*/)
 
 EL::StatusCode JetCalibrator :: initialize ()
 {
-  if (asg::ToolStore::contains<JetCleaningTool>("JetCleaningTool")) {
-    m_jcl_t = asg::ToolStore::get<JetCleaningTool>("JetCleaningTool");
-  } else {
-    m_jcl_t = new JetCleaningTool("JetCleaningTool");
-    EL_RETURN_CHECK("initialize", m_jcl_t->setProperty("CutLevel", "LooseBad"));
-    EL_RETURN_CHECK("initialize", m_jcl_t->setProperty("DoUgly", false));
-    EL_RETURN_CHECK("initialize", m_jcl_t->initialize());
-  }
 
   if (asg::ToolStore::contains<JetCalibrationTool>("JetCalibrationTool")) {
     m_jca_t = asg::ToolStore::get<JetCalibrationTool>("JetCalibrationTool");
@@ -107,17 +98,15 @@ EL::StatusCode JetCalibrator :: execute ()
   calib_jets->setStore(calib_jets_aux);
 
   for (const auto jet: *jets) {
-    if (m_jcl_t->accept(*jet)) {
-      xAOD::Jet* new_jet = 0; //new xAOD::Jet();
-      m_jca_t->calibratedCopy(*jet, new_jet);
-      // new_jet->makePrivateStore(*jet);
-
-      // m_jca_t->applyCorrection(*new_jet);
-      calib_jets->push_back(new_jet);
-      if (not xAOD::setOriginalObjectLink(*jet, *new_jet)) {
-	ATH_MSG_ERROR("Fail to set the links");
-	return EL::StatusCode::FAILURE;
-      }
+    xAOD::Jet* new_jet = 0; //new xAOD::Jet();
+    m_jca_t->calibratedCopy(*jet, new_jet);
+    // new_jet->makePrivateStore(*jet);
+    
+    // m_jca_t->applyCorrection(*new_jet);
+    calib_jets->push_back(new_jet);
+    if (not xAOD::setOriginalObjectLink(*jet, *new_jet)) {
+      ATH_MSG_ERROR("Fail to set the links");
+      return EL::StatusCode::FAILURE;
     }
   }
   
@@ -145,11 +134,7 @@ EL::StatusCode JetCalibrator :: postExecute ()
 EL::StatusCode JetCalibrator :: finalize ()
 {
 
-  if (m_jcl_t) {
-    m_jcl_t = NULL;
-    delete m_jcl_t;
-  }
-
+  ATH_MSG_INFO("finalize");
   if (m_jca_t) {
     m_jca_t = NULL;
     delete m_jca_t;

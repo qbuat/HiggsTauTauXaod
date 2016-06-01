@@ -113,9 +113,6 @@ EL::StatusCode EventPreProcessor :: execute ()
 
   m_hcutflow->Fill("processed", 1);
 
-  if ((wk()->treeEntry() % 200) == 0)
-    ATH_MSG_INFO("Read event number "<< wk()->treeEntry() << " / " << event->getEntries());
-
   const xAOD::EventInfo * ei = 0;
   EL_RETURN_CHECK("execute", Utils::retrieve(ei, "EventInfo", event, store));
 

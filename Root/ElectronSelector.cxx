@@ -104,7 +104,7 @@ EL::StatusCode ElectronSelector :: execute ()
 
   const xAOD::TruthParticleContainer* truths = 0;
   if (ei->eventType(xAOD::EventInfo::IS_SIMULATION))
-    EL_RETURN_CHECK("execute", Utils::retrieve(truths, "SelectedTruthTaus", event, store));
+    EL_RETURN_CHECK("execute", Utils::retrieve(truths, "TruthTaus", event, store));
 
   // create a new electron container
   xAOD::ElectronContainer* selected_electrons = new xAOD::ElectronContainer();

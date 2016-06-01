@@ -2,7 +2,6 @@
 #define HiggsTauTauXaod_JetCalibrator_H
 
 #include <EventLoop/Algorithm.h>
-#include "JetSelectorTools/JetCleaningTool.h"
 #include "JetCalibTools/JetCalibrationTool.h"
 
 class JetCalibrator : public EL::Algorithm
@@ -21,7 +20,6 @@ public:
   // Tree *myTree; //!
   // TH1 *myHist; //!
 
-  JetCleaningTool *m_jcl_t;//!
   JetCalibrationTool *m_jca_t;//!
 
   // this is a standard constructor

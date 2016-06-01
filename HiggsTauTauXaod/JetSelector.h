@@ -2,6 +2,7 @@
 #define HiggsTauTauXaod_JetSelector_H
 
 #include <EventLoop/Algorithm.h>
+#include "JetSelectorTools/JetCleaningTool.h"
 
 class JetSelector : public EL::Algorithm
 {
@@ -19,6 +20,7 @@ public:
   // Tree *myTree; //!
   // TH1 *myHist; //!
 
+  JetCleaningTool *m_jcl_t;//!
 
 
   // this is a standard constructor

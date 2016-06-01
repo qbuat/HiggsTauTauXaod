@@ -50,19 +50,19 @@ StatusCode EventVariablesTool::execute(const xAOD::EventInfo * ei,
   ei->auxdecor<double>("delta_phi_tau1_met") = DeltaPhi(tau1, met);
   ei->auxdecor<double>("delta_phi_tau2_met") = DeltaPhi(tau2, met);
   ei->auxdecor<double>("collinear_mass") = CollinearMass(tau1, tau2, met);
-
+  ei->auxdecor<double>("visible_mass") = (tau1->p4() + tau2->p4()).M();
   if (m_mmc)
     ATH_MSG_INFO("store MMC result");
 
   // jets
   ei->auxdecor<int>("njets") = (int)jets->size();
 
-  int njets25 = 0;
+  int njets30 = 0;
   for (const auto* j: *jets) {
-    if (j->pt() > 25000.) 
-      njets25++;
+    if (j->pt() > 30000.) 
+      njets30++;
   }
-  ei->auxdecor<int>("njets25") = njets25;
+  ei->auxdecor<int>("njets30") = njets30;
 
   return StatusCode::SUCCESS;
 }

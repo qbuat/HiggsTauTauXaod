@@ -76,6 +76,13 @@ EL::StatusCode TauCalibrator :: initialize ()
     EL_RETURN_CHECK("initialize", m_tausmear->initialize());
   }
 
+  if (asg::ToolStore::contains<TauAnalysisTools::TauTruthMatchingTool>("TauTruthMatchingTool")) {
+    m_t2mt = asg::ToolStore::get<TauAnalysisTools::TauTruthMatchingTool>("TauTruthMatchingTool");
+  } else {
+    ATH_MSG_FATAL("TauTruthMatching should be initialized earlier!");
+    return EL::StatusCode::FAILURE;
+  }
+
   return EL::StatusCode::SUCCESS;
 }
 
@@ -103,10 +110,15 @@ EL::StatusCode TauCalibrator :: execute ()
   calibrated_taus->setStore(calibrated_taus_aux);
 
   for (const auto tau: *taus) {
+    m_t2mt->getTruth(*tau);
     xAOD::TauJet* new_tau = new xAOD::TauJet();
     new_tau->makePrivateStore(*tau);
     // TO BE FIXED 
-    // m_tausmear->applyCorrection(*new_tau);
+    auto code = m_tausmear->applyCorrection(*new_tau);
+    if (not code == CP::CorrectionCode::Ok) {
+      ATH_MSG_FATAL("Tau smearing failed miserably");
+      return EL::StatusCode::FAILURE;
+    }
     calibrated_taus->push_back(new_tau);
   }
 
@@ -133,6 +145,10 @@ EL::StatusCode TauCalibrator :: finalize ()
   if (m_tausmear) {
     m_tausmear = NULL;
     delete m_tausmear;
+  }
+  if (m_t2mt) {
+    m_t2mt = NULL;
+    delete m_t2mt;
   }
 
   return EL::StatusCode::SUCCESS;

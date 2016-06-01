@@ -26,7 +26,7 @@ ClassImp(JetSelector)
 
 
 
-JetSelector :: JetSelector ()
+JetSelector :: JetSelector () :  m_jcl_t(nullptr)
 {
 
 }
@@ -76,6 +76,18 @@ EL::StatusCode JetSelector :: initialize ()
 {
   ATH_MSG_INFO("Initialization completed");
   return EL::StatusCode::SUCCESS;
+
+  if (asg::ToolStore::contains<JetCleaningTool>("JetCleaningTool")) {
+    m_jcl_t = asg::ToolStore::get<JetCleaningTool>("JetCleaningTool");
+  } else {
+    m_jcl_t = new JetCleaningTool("JetCleaningTool");
+    EL_RETURN_CHECK("initialize", m_jcl_t->setProperty("CutLevel", "LooseBad"));
+    EL_RETURN_CHECK("initialize", m_jcl_t->setProperty("DoUgly", false));
+    EL_RETURN_CHECK("initialize", m_jcl_t->initialize());
+  }
+
+
+
 }
 
 
@@ -86,6 +98,8 @@ EL::StatusCode JetSelector :: execute ()
   ATH_MSG_DEBUG("execute next event: " << wk()->treeEntry());
   xAOD::TEvent* event = wk()->xaodEvent();
   xAOD::TStore* store = wk()->xaodStore();
+
+
 
   // retrieve previously stored containers
   const xAOD::JetContainer* jets = 0;
@@ -107,6 +121,10 @@ EL::StatusCode JetSelector :: execute ()
   selected_jets->setStore(selected_jets_aux);
 
   for (const auto jet: *jets) {
+
+    // // cleaning
+    // if (not m_jcl_t->accept(*jet))
+    //   continue;
       
     // pt cut
     if (jet->pt() < 20000.) 
@@ -115,7 +133,7 @@ EL::StatusCode JetSelector :: execute ()
     // eta cut
     if (fabs(jet->eta()) > 4.5)
       continue;
-
+    
     for (auto tau: *taus)
       if (jet->p4().DeltaR(tau->p4()) < 0.2)
 	continue;
@@ -123,11 +141,11 @@ EL::StatusCode JetSelector :: execute ()
     for (auto muon: *muons)
       if (jet->p4().DeltaR(muon->p4()) < 0.4)
 	continue;
-
+    
     for (auto electron: *electrons)
       if (jet->p4().DeltaR(electron->p4()) < 0.4)
 	continue;
-
+    
     xAOD::Jet* new_jet = new xAOD::Jet();
     new_jet->makePrivateStore(*jet);
     selected_jets->push_back(new_jet);
@@ -154,7 +172,11 @@ EL::StatusCode JetSelector :: postExecute ()
 
 EL::StatusCode JetSelector :: finalize ()
 {
-  ATH_MSG_INFO("finalize");
+  if (m_jcl_t) {
+    m_jcl_t = NULL;
+    delete m_jcl_t;
+  }
+
   return EL::StatusCode::SUCCESS;
 }
 

@@ -65,13 +65,13 @@ EL::StatusCode HadHadSelector :: histInitialize ()
   m_hcutflow->GetXaxis()->SetBinLabel(1, "processed");
   m_hcutflow->GetXaxis()->SetBinLabel(2, "grl");
   m_hcutflow->GetXaxis()->SetBinLabel(3, "trigger");
-  m_hcutflow->GetXaxis()->SetBinLabel(4, "ntruthtaus");
-  m_hcutflow->GetXaxis()->SetBinLabel(5, "ntaus");
-  m_hcutflow->GetXaxis()->SetBinLabel(6, "taus_pt");
-  m_hcutflow->GetXaxis()->SetBinLabel(7, "met");
-  m_hcutflow->GetXaxis()->SetBinLabel(8, "met_centrality");
-  m_hcutflow->GetXaxis()->SetBinLabel(9, "deta_tautau");
-  m_hcutflow->GetXaxis()->SetBinLabel(10, "dr_tautau");
+  m_hcutflow->GetXaxis()->SetBinLabel(4, "ntaus");
+  m_hcutflow->GetXaxis()->SetBinLabel(5, "taus_pt");
+  m_hcutflow->GetXaxis()->SetBinLabel(6, "met");
+  m_hcutflow->GetXaxis()->SetBinLabel(7, "met_centrality");
+  m_hcutflow->GetXaxis()->SetBinLabel(8, "deta_tautau");
+  m_hcutflow->GetXaxis()->SetBinLabel(9, "dr_tautau");
+  m_hcutflow->GetXaxis()->SetBinLabel(10, "opposite_sign");
 
   wk()->addOutput(m_hcutflow);
 
@@ -115,6 +115,7 @@ EL::StatusCode HadHadSelector :: initialize ()
   } else {
     m_mmc_tool = new MissingMassTool("MissingMassTool");
     EL_RETURN_CHECK("initialize", m_mmc_tool->setProperty("Decorate", true));
+    EL_RETURN_CHECK("initialize", m_mmc_tool->setProperty("CalibSet", "2015HIGHMASS"));
     EL_RETURN_CHECK("initialize", m_mmc_tool->initialize());
   }
 
@@ -133,9 +134,6 @@ EL::StatusCode HadHadSelector :: initialize ()
     return EL::StatusCode::FAILURE;
   }
 
-
-
-
   // TFile *file = wk()->getOutputFile ("hist");
   // event = wk()->xaodEvent();
   // EL_RETURN_CHECK("initialize", event->writeTo(file));
@@ -152,16 +150,18 @@ EL::StatusCode HadHadSelector :: execute ()
 
   m_hcutflow->Fill("processed", 1);
   if ((wk()->treeEntry() % 200) == 0)
-    ATH_MSG_INFO("Read event number "<< wk()->treeEntry() << " / " << event->getEntries());
+    ATH_MSG_DEBUG("Read event number "<< wk()->treeEntry() << " / " << event->getEntries());
 
   const xAOD::EventInfo * ei = 0;
   EL_RETURN_CHECK("execute", Utils::retrieve(ei, "EventInfo", event, store));
 
   // Apply the grl
-  if (not ei->eventType(xAOD::EventInfo::IS_SIMULATION))
-      if (not m_grl->passRunLB(*ei))
-	return EL::StatusCode::SUCCESS;
-
+  if (not ei->eventType(xAOD::EventInfo::IS_SIMULATION)) {
+    if (not m_grl->passRunLB(*ei)) {
+      wk()->skipEvent();
+      return EL::StatusCode::SUCCESS;
+    }
+  }
   m_hcutflow->Fill("grl", 1);
 
   // Apply trigger
@@ -172,9 +172,10 @@ EL::StatusCode HadHadSelector :: execute ()
       break;
     }
   }
-  if (not is_trigger_passed)
+  if (not is_trigger_passed){      
+    wk()->skipEvent();
     return EL::StatusCode::SUCCESS;
-
+  }
   // if (not m_trigDecTool->isPassed(trigger_name))
   //   return EL::StatusCode::SUCCESS;
 
@@ -201,30 +202,43 @@ EL::StatusCode HadHadSelector :: execute ()
   const xAOD::MissingETContainer * mets = 0;
   EL_RETURN_CHECK("execute", Utils::retrieve(mets, "NewMet", event, store));
   const xAOD::MissingET * met = *mets->find("FinalClus");
+  // EL_RETURN_CHECK("execute", Utils::retrieve(mets, "MET_Reference_AntiKt4LCTopo", event, store));
+  // const xAOD::MissingET * met = *mets->find("FinalClus");
 
-  if (truth_taus->size() !=2) 
-    return EL::StatusCode::SUCCESS;
+  // if (truth_taus->size() !=2) {
+  //   wk()->skipEvent();
+  //   return EL::StatusCode::SUCCESS;
+  // }
   m_hcutflow->Fill("ntruthtaus", 1);
     
 
-  if (taus->size() != 2)
+  if (taus->size() != 2) {
+    wk()->skipEvent();
     return EL::StatusCode::SUCCESS;
+  }
+
   m_hcutflow->Fill("ntaus", 1);
 
   // tau pt cuts
-  if (taus->at(0)->pt() < 40000.)
+  if (taus->at(0)->pt() < 40000.) {
+    wk()->skipEvent();
     return EL::StatusCode::SUCCESS;
+  }
   
-  if (taus->at(1)->pt() < 30000.)
+  if (taus->at(1)->pt() < 30000.) {
+    wk()->skipEvent();
     return EL::StatusCode::SUCCESS;
+  }
 
   m_hcutflow->Fill("taus_pt", 1);
 
 
 
-  // // missing Et
-  // if (met->met() > 20000.)
-  //   return EL::StatusCode::SUCCESS;
+  // missing Et
+  if (met->met() < 20000.) {
+    wk()->skipEvent();
+    return EL::StatusCode::SUCCESS;
+  }
 
   m_hcutflow->Fill("met", 1);
 
@@ -233,39 +247,65 @@ EL::StatusCode HadHadSelector :: execute ()
 
 
   // met centrality
+  bool pass_met_centrality = false;
   if (std::min(std::fabs(ei->auxdata<double>("delta_phi_tau1_met")), 
 	       std::fabs(ei->auxdata<double>("delta_phi_tau2_met"))) < TMath::Pi() / 4.
       or ei->auxdata<double>("met_centrality") >= 1)
-    return EL::StatusCode::SUCCESS;
-  
+    pass_met_centrality = true;
+
+  // if (not pass_met_centrality) {
+  //   wk()->skipEvent();
+  //   return EL::StatusCode::SUCCESS;
+  // }  
+
   m_hcutflow->Fill("met_centrality", 1);
 
 
   // deta cut
-  if (ei->auxdata<double>("delta_eta") > 1.5)
+  if (ei->auxdata<double>("delta_eta") > 1.5) {
+    wk()->skipEvent();
     return EL::StatusCode::SUCCESS;
+  }
 
   m_hcutflow->Fill("deta_tautau", 1);
 
   // DR cut
-  if (ei->auxdata<double>("delta_r") < 0.4)
+  if (ei->auxdata<double>("delta_r") < 0.8) {
+    wk()->skipEvent();
     return EL::StatusCode::SUCCESS;
-  
-  if (ei->auxdata<double>("delta_r") > 2.4)
+  }  
+
+  if (ei->auxdata<double>("delta_r") > 2.4) {
+    wk()->skipEvent();
     return EL::StatusCode::SUCCESS;
+  }
 
   m_hcutflow->Fill("dr_tautau", 1);
 
 
-  m_mmc_tool->apply(*ei, taus->at(0), taus->at(1), met, ei->auxdata<int>("njets25"));
+  if (taus->at(0)->charge() * taus->at(1)->charge() >= 0) {
+    wk()->skipEvent();
+    return EL::StatusCode::SUCCESS;
+  }
+
+  m_hcutflow->Fill("opposite_sign", 1);
 
 
+  auto code = m_mmc_tool->apply(*ei, taus->at(0), taus->at(1), met, ei->auxdata<int>("njets30"));
+  if (not code == CP::CorrectionCode::Ok)
+    return StatusCode::FAILURE;
+
+  ATH_MSG_INFO(Form("N(el) =  %d, N(mu) = %d, N(tau) = %d, N(jets) = %d", 
+		    (int)electrons->size(), (int)muons->size(), (int)taus->size(), (int)jets->size()));
+  // ATH_MSG_INFO("N(leptons) = "<< (electrons->size() + muons->size() + taus->size()));
+ 
+  // ATH_MSG_INFO("Filling event number " 
+  // 	       << (int)m_hcutflow->GetBinContent(m_hcutflow->GetNbinsX() - 2)
+  // 	       << "in the output");
   m_book.fill_tau(taus->at(0), taus->at(1));
   m_book.fill_evt(ei);
   m_book.fill_met(met);
 
-  ATH_MSG_DEBUG(Form("N(el) =  %d, N(mu) = %d, N(tau) = %d", (int)electrons->size(), (int)muons->size(), (int)taus->size()));
-  ATH_MSG_DEBUG("N(leptons) = "<< (electrons->size() + muons->size() + taus->size()));
   // if (electrons->size() + muons->size() + taus->size() != 2)
   //   ATH_MSG_ERROR("Need exactly two leptons to proceed and got : "<<electrons->size() + muons->size() + taus->size());
 

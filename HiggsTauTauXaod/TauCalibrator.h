@@ -3,6 +3,7 @@
 
 #include <EventLoop/Algorithm.h>
 #include "TauAnalysisTools/TauSmearingTool.h"
+#include "TauAnalysisTools/TauTruthMatchingTool.h"
 
 class TauCalibrator : public EL::Algorithm
 {
@@ -20,6 +21,7 @@ public:
  private:
   
   TauAnalysisTools::TauSmearingTool *m_tausmear;//!
+  TauAnalysisTools::TauTruthMatchingTool *m_t2mt; //!
 
 
 public:
