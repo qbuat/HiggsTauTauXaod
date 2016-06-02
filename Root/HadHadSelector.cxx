@@ -75,6 +75,10 @@ EL::StatusCode HadHadSelector :: histInitialize ()
 
   wk()->addOutput(m_hcutflow);
 
+
+  m_hmet_diff = new TH1F("hmet_diff", "met_diff", 50, -50, 50);
+  wk()->addOutput(m_hmet_diff);
+
   m_book.book();
   m_book.record(wk());
 
@@ -202,13 +206,17 @@ EL::StatusCode HadHadSelector :: execute ()
   const xAOD::MissingETContainer * mets = 0;
   EL_RETURN_CHECK("execute", Utils::retrieve(mets, "NewMet", event, store));
   const xAOD::MissingET * met = *mets->find("FinalClus");
-  // EL_RETURN_CHECK("execute", Utils::retrieve(mets, "MET_Reference_AntiKt4LCTopo", event, store));
-  // const xAOD::MissingET * met = *mets->find("FinalClus");
 
-  // if (truth_taus->size() !=2) {
-  //   wk()->skipEvent();
-  //   return EL::StatusCode::SUCCESS;
-  // }
+  const xAOD::MissingETContainer * mets_ref = 0;
+  EL_RETURN_CHECK("execute", Utils::retrieve(mets_ref, "MET_Reference_AntiKt4LCTopo", event, store));
+  const xAOD::MissingET * met_ref = *mets_ref->find("FinalClus");
+
+  // ATH_MSG_INFO("ref met = " << met_ref->met() << ", new met = " << met->met());
+  m_hmet_diff->Fill( (met->met() - met_ref->met()) / 1e3 );
+  if (truth_taus->size() !=2) {
+    wk()->skipEvent();
+    return EL::StatusCode::SUCCESS;
+  }
   m_hcutflow->Fill("ntruthtaus", 1);
     
 

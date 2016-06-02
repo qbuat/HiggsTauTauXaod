@@ -48,6 +48,7 @@ class HadHadSelector : public EL::Algorithm
 public:
 
   TH1F* m_hcutflow; //!
+  TH1F* m_hmet_diff; //!
 
  
   // this is a standard constructor

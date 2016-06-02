@@ -11,6 +11,7 @@
 // tools
 #include "AsgTools/MsgStream.h"
 #include "AsgTools/MsgStreamMacros.h"
+#include "METUtilities/CutsMETMaker.h"
 
 // EDM
 #include "xAODEventInfo/EventInfo.h"
@@ -19,6 +20,7 @@
 #include "xAODJet/JetContainer.h"
 #include "xAODMuon/MuonContainer.h"
 #include "xAODEgamma/ElectronContainer.h"
+#include "xAODEgamma/PhotonContainer.h"
 #include "xAODMissingET/MissingETContainer.h"
 #include "xAODMissingET/MissingETAuxContainer.h"
 #include "xAODMissingET/MissingETComposition.h"
@@ -101,16 +103,19 @@ EL::StatusCode MetCalculator :: execute ()
   EL_RETURN_CHECK("execute", Utils::retrieve(ei, "EventInfo", event, store));
 
   const xAOD::TauJetContainer* taus = 0;
-  EL_RETURN_CHECK("execute", Utils::retrieve(taus, "SelectedTaus", event, store));
+  EL_RETURN_CHECK("execute", Utils::retrieve(taus, "TauJets", event, store));
 
   const xAOD::JetContainer* jets = 0;
   EL_RETURN_CHECK("execute", Utils::retrieve(jets, "CalibratedJets", event, store));
 
   const xAOD::MuonContainer* muons = 0;
-  EL_RETURN_CHECK("execute", Utils::retrieve(muons, "SelectedMuons", event, store));
+  EL_RETURN_CHECK("execute", Utils::retrieve(muons, "Muons", event, store));
 
   const xAOD::ElectronContainer* electrons = 0;
-  EL_RETURN_CHECK("execute", Utils::retrieve(electrons, "SelectedElectrons", event, store));
+  EL_RETURN_CHECK("execute", Utils::retrieve(electrons, "Electrons", event, store));
+
+  const xAOD::PhotonContainer* photons = 0;
+  EL_RETURN_CHECK("execute", Utils::retrieve(photons, "Photons", event, store));
 
   const xAOD::MissingETContainer* core_met = 0;
   EL_RETURN_CHECK("execute", Utils::retrieve(core_met, "MET_Core_AntiKt4LCTopo", event, store));
@@ -127,25 +132,63 @@ EL::StatusCode MetCalculator :: execute ()
 
 
 
+  ConstDataVector<xAOD::ElectronContainer> met_electrons(SG::VIEW_ELEMENTS);
+  for (const auto el: *electrons) {
+    if (CutsMETMaker::accept(el)) {
+	met_electrons.push_back(el);
+    }
+  }
+
+  ConstDataVector<xAOD::PhotonContainer> met_photons(SG::VIEW_ELEMENTS);
+  for (const auto ph: *photons) {
+    if (CutsMETMaker::accept(ph)) {
+      met_photons.push_back(ph);
+    }
+  }
+
+  ConstDataVector<xAOD::MuonContainer> met_muons(SG::VIEW_ELEMENTS);
+  for (const auto muon: *muons) {
+    if (CutsMETMaker::accept(muon)) {
+      met_muons.push_back(muon);
+    }
+  }
+
+  ConstDataVector<xAOD::TauJetContainer> met_taus(SG::VIEW_ELEMENTS);
+  for (const auto tau: *taus) {
+    if (CutsMETMaker::accept(tau)) {
+      met_taus.push_back(tau);
+    }
+  }
+
+  ConstDataVector<xAOD::JetContainer> met_jets(SG::VIEW_ELEMENTS);
+  for (const auto jet: *jets) {
+    met_jets.push_back(jet);
+  }
+
 
   // electrons
   if (electrons->size() != 0) {
-    EL_RETURN_CHECK("execute", m_metmaker->rebuildMET("RefEle", xAOD::Type::Electron, newMet, electrons, metMap));
+    EL_RETURN_CHECK("execute", m_metmaker->rebuildMET("RefEle", xAOD::Type::Electron, newMet, met_electrons.asDataVector(), metMap));
   }
 
-  // muons
-  if (muons->size() != 0) {
-    EL_RETURN_CHECK("execute", m_metmaker->rebuildMET("Muons", xAOD::Type::Muon, newMet, muons, metMap));
+  // photons
+  if (photons->size() != 0) {
+    EL_RETURN_CHECK("execute", m_metmaker->rebuildMET("RefPhoton", xAOD::Type::Photon, newMet, met_photons.asDataVector(), metMap));
   }
 
   // taus
   if (taus->size() != 0) {
-    EL_RETURN_CHECK("execute", m_metmaker->rebuildMET("RefTau", xAOD::Type::Tau, newMet, taus, metMap));
+    EL_RETURN_CHECK("execute", m_metmaker->rebuildMET("RefTau", xAOD::Type::Tau, newMet, met_taus.asDataVector(), metMap));
+  }
+
+  // muons
+  if (muons->size() != 0) {
+    EL_RETURN_CHECK("execute", m_metmaker->rebuildMET("RefMuons", xAOD::Type::Muon, newMet, met_muons.asDataVector(), metMap));
   }
 
   // jets (no jvt yet)
   if (jets->size() != 0) {
-    EL_RETURN_CHECK("execute", m_metmaker->rebuildJetMET("RefJet", "SoftClus", newMet, jets, core_met, metMap, false));
+    EL_RETURN_CHECK("execute", m_metmaker->rebuildJetMET("RefJet", "SoftClus", newMet, met_jets.asDataVector(), core_met, metMap, false));
   }
 
 
