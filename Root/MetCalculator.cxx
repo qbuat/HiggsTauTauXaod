@@ -103,7 +103,7 @@ EL::StatusCode MetCalculator :: execute ()
   EL_RETURN_CHECK("execute", Utils::retrieve(ei, "EventInfo", event, store));
 
   const xAOD::TauJetContainer* taus = 0;
-  EL_RETURN_CHECK("execute", Utils::retrieve(taus, "TauJets", event, store));
+  EL_RETURN_CHECK("execute", Utils::retrieve(taus, "CalibratedTaus", event, store));
 
   const xAOD::JetContainer* jets = 0;
   EL_RETURN_CHECK("execute", Utils::retrieve(jets, "CalibratedJets", event, store));

@@ -22,6 +22,7 @@ if __name__ == '__main__':
     group_driver.add_argument('--direct', dest='driver', action='store_const', const='direct', help='Run your jobs locally.')
     group_driver.add_argument('--grid', dest='driver', action='store_const', const='grid', help='Run your jobs on the grid.')
     parser.add_argument('--version', type=int, default=None)
+    parser.add_argument('--official', default=False, action='store_true')
     group_driver.set_defaults(driver='direct')
     args = parser.parse_args()
 
@@ -32,23 +33,34 @@ if __name__ == '__main__':
 
     # sample_name =         'mc15_13TeV.341225.PowhegPythia8EvtGen_CT10_AZNLOCTEQ6L1_ggH125_tautauIncl.merge.AOD.e4044_s2608_r6765_r6282',
 
-    sample_name = 'mc15_13TeV.341157.PowhegPythia8EvtGen_CT10_AZNLOCTEQ6L1_VBFH125_tautauhh.merge.AOD.e3888_s2608_s2183_r7772_r7676'
+    test_sample= 'mc15_13TeV.341157.PowhegPythia8EvtGen_CT10_AZNLOCTEQ6L1_VBFH125_tautauhh.merge.AOD.e3888_s2608_s2183_r7772_r7676'
         # 'mc15_13TeV.341124.PowhegPythia8EvtGen_CT10_AZNLOCTEQ6L1_ggH125_tautauhh.merge.AOD.e3935_s2608_s2183_r7772_r7676',
         # 'mc15_13TeV.361108.PowhegPythia8EvtGen_AZNLOCTEQ6L1_Ztautau.merge.AOD.e3601_s2726_r7772_r7676'
     # sample_name = 'mc15_13TeV.341124.PowhegPythia8EvtGen_CT10_AZNLOCTEQ6L1_ggH125_tautauhh.merge.AOD.e3935_s2608_s2183_r7772_r7676'
     # sample_name = 'mc15_13TeV.361108.PowhegPythia8EvtGen_AZNLOCTEQ6L1_Ztautau.merge.AOD.e3601_s2726_r7772_r7676'
     # sample_name = 'data15_13TeV.00276790.physics_Main.merge.DAOD_HIGG4D3.f620_m1480_p2425'
+
+    samples = [
+        'mc15_13TeV.341157.PowhegPythia8EvtGen_CT10_AZNLOCTEQ6L1_VBFH125_tautauhh.merge.AOD.e3888_s2608_s2183_r7772_r7676',
+        'mc15_13TeV.341124.PowhegPythia8EvtGen_CT10_AZNLOCTEQ6L1_ggH125_tautauhh.merge.AOD.e3935_s2608_s2183_r7772_r7676',
+        'mc15_13TeV.361108.PowhegPythia8EvtGen_AZNLOCTEQ6L1_Ztautau.merge.AOD.e3601_s2726_r7772_r7676'
+        ]
+
+
     if args.driver == 'direct':
         log.info('grab eos samples')
         # Get SampleHandler from EOS
         from eos import get_sample
-        sample = get_sample(sample_name)
+        sample_handler = get_sample(test_sample)
     elif args.driver == 'grid':
-        sample = ROOT.SH.SampleHandler()
-        ROOT.SH.scanDQ2(sample, sample_name)
+        sample_handler = ROOT.SH.SampleHandler()
+        for sample in samples:
+            log.info('add {0}'.format(sample))
+            ROOT.SH.addGrid(sample_handler, sample) 
+        # ROOT.SH.scanDQ2(sample, sample_name)
 
-    sample.printContent()
-    sample.setMetaString ("nc_tree", "CollectionTree")
+    sample_handler.printContent()
+    sample_handler.setMetaString ("nc_tree", "CollectionTree")
         
     preproc = ROOT.EventPreProcessor()
     preproc.SetName('Htt_EventPreProcessor')
@@ -69,6 +81,7 @@ if __name__ == '__main__':
 
     tau_calib = ROOT.TauCalibrator()
     tau_calib.SetName('Htt_TauCalibrator')
+    tau_calib.mva_tes_file = '$ROOTCOREBIN/data/HiggsTauTauXaod/LC.pantau.interpolPt250GeV_mediumTaus_BDTG.weights.xml'
 
     tau_sel = ROOT.TauSelector()
     tau_sel.SetName('Htt_TauSelector')
@@ -116,7 +129,7 @@ if __name__ == '__main__':
 
     # Setup the EventLoop Job
     job = ROOT.EL.Job()
-    job.sampleHandler(sample)
+    job.sampleHandler(sample_handler)
     for alg in algs:
         log.info('add {0}'.format(alg.GetName()))
         job.algsAdd(alg)
@@ -146,12 +159,21 @@ if __name__ == '__main__':
     elif args.driver == 'grid':
         driver = ROOT.EL.PrunDriver()
 
+        user_name = 'user.{0}' .format(os.getlogin())
+        if args.official:
+            user_name = 'group.phys-higgs'
+
         from eos import get_output_name
-        output_name = get_output_name(sample_name, 'user.qbuat', args.version)
-        log.info(output_name)
-        driver.options().setString("nc_outputSampleName", output_name)
-        # job.options().setDouble("nc_official", 1);
-        # job.options().setString("nc_voms", "atlas:/atlas/phys-higgs/Role=production");
+        for sample in sample_handler:
+            log.info(sample.name())
+            output_name = get_output_name(sample.name(), user_name, args.version)
+            log.info(output_name)
+            sample.setMetaString("nc_outputSampleName", output_name)
+
+           # driver.options().setString("nc_outputSampleName", output_name)
+        if args.official:
+            job.options().setDouble("nc_official", 1);
+            job.options().setString("nc_voms", "atlas:/atlas/phys-higgs/Role=production");
         job.options().setDouble("nc_mergeOutput", 1)
         # driver.options().setDouble("nc_nFilesPerJob", 1)
         driver.options().setDouble("nc_showCmd", 1)

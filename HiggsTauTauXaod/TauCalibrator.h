@@ -5,6 +5,9 @@
 #include "TauAnalysisTools/TauSmearingTool.h"
 #include "TauAnalysisTools/TauTruthMatchingTool.h"
 
+#include "tauRecTools/MvaTESVariableDecorator.h"
+#include "tauRecTools/MvaTESEvaluator.h"
+
 class TauCalibrator : public EL::Algorithm
 {
   // put your configuration variables here as public variables.
@@ -17,12 +20,14 @@ public:
   // variables that don't get filled at submission time should be
   // protected from being send from the submission node to the worker
   // node (done by the //!)
+  std::string mva_tes_file;
 
  private:
   
   TauAnalysisTools::TauSmearingTool *m_tausmear;//!
   TauAnalysisTools::TauTruthMatchingTool *m_t2mt; //!
-
+  MvaTESVariableDecorator *m_mva_tes_decor; //!
+  MvaTESEvaluator *m_mva_tes_eval; //!
 
 public:
   // Tree *myTree; //!
