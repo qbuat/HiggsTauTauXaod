@@ -104,8 +104,8 @@ EL::StatusCode HadHadSelector :: changeInput (bool /*firstFile*/)
 EL::StatusCode HadHadSelector :: initialize ()
 {
 
-  store = wk()->xaodStore();
-  event = wk()->xaodEvent();
+  xAOD::TEvent* event = wk()->xaodEvent();
+  xAOD::TStore* store = wk()->xaodStore();
 
   if (asg::ToolStore::contains<EventVariablesTool>("EventVariablesTool")) {
     m_var_tool = asg::ToolStore::get<EventVariablesTool>("EventVariablesTool");
@@ -138,10 +138,6 @@ EL::StatusCode HadHadSelector :: initialize ()
     return EL::StatusCode::FAILURE;
   }
 
-  // TFile *file = wk()->getOutputFile ("hist");
-  // event = wk()->xaodEvent();
-  // EL_RETURN_CHECK("initialize", event->writeTo(file));
-
   ATH_MSG_INFO("Initialization completed");
   return EL::StatusCode::SUCCESS;
 }
@@ -150,7 +146,8 @@ EL::StatusCode HadHadSelector :: initialize ()
 
 EL::StatusCode HadHadSelector :: execute ()
 {
-  // event = wk()->xaodEvent();
+  xAOD::TEvent* event = wk()->xaodEvent();
+  xAOD::TStore* store = wk()->xaodStore();
 
   m_hcutflow->Fill("processed", 1);
   if ((wk()->treeEntry() % 200) == 0)
@@ -336,9 +333,6 @@ EL::StatusCode HadHadSelector :: finalize ()
 {
   ATH_MSG_INFO("finalize");
 
-  // TFile *file = wk()->getOutputFile ("hist");
-  // xAOD::TEvent* event = wk()->xaodEvent();
-  // EL_RETURN_CHECK("finalize", event->finishWritingTo( file ));
   if (m_grl) {
     m_grl = NULL;
     delete m_grl;

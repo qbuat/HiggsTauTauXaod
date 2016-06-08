@@ -31,7 +31,8 @@ ClassImp(Writer)
 
 
 
-Writer :: Writer ()
+Writer :: Writer () : m_event(nullptr),
+  m_store(nullptr)
 {
 }
 
@@ -92,12 +93,12 @@ EL::StatusCode Writer :: execute ()
   xAOD::TauJetContainer* taus = 0;
   EL_RETURN_CHECK("execute", Utils::retrieve(taus, "SelectedTaus", 0, m_store));
 
-  xAOD::TauJetAuxContainer* taus_aux = 0;
-  EL_RETURN_CHECK("execute", Utils::retrieve(taus_aux, "SelectedTausAux.", 0, m_store));
+  // xAOD::TauJetAuxContainer* taus_aux = 0;
+  // EL_RETURN_CHECK("execute", Utils::retrieve(taus_aux, "SelectedTausAux.", 0, m_store));
 
 
   m_event->record(taus, "SelectedTaus");
-  m_event->record(taus_aux, "SelectedTausAux.");
+  // m_event->record(taus_aux, "SelectedTausAux.");
 
   // m_event->copy("EventInfo");
   // m_event->copy("SelectedTaus");
