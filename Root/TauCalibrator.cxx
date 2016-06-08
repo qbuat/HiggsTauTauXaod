@@ -145,8 +145,10 @@ EL::StatusCode TauCalibrator :: execute ()
     ATH_MSG_DEBUG("old calib pt = " << new_tau->pt());
     EL_RETURN_CHECK("execute", m_mva_tes_decor->execute(*new_tau));
     EL_RETURN_CHECK("execute", m_mva_tes_eval->execute(*new_tau));
+
+    float mva_pt = new_tau->auxdata<float>("ptFinalCalib");
     new_tau->setP4(
-		   new_tau->auxdata<float>("ptFinalCalib"),
+		   mva_pt < 1000. ? 1000. : mva_pt, 
 		   new_tau->etaPanTauCellBased(),
 		   new_tau->phiPanTauCellBased(), 0);
     ATH_MSG_DEBUG("new calib pt = " << new_tau->pt());

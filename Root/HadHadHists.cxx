@@ -17,6 +17,8 @@ void HadHadHists :: book()
   m_h1d["tau1_phi"]     = new TH1F((m_name + "/h_tau1_phi").c_str(), "tau1_phi", 10, -3.15, 3.15);
   m_h1d["tau1_ntracks"] = new TH1F((m_name + "/h_tau1_ntracks").c_str(), "tau1_ntracks", 5, 0, 5);
   m_h1d["tau1_bdt"]     = new TH1F((m_name + "/h_tau1_bdt").c_str(), "tau1_bdt", 10, 0, 1);
+  m_h1d["tau1_pt_res"]  = new TH1F((m_name + "/h_tau1_pt_res").c_str(), "tau1_pt_res", 10, -0.2, 0.2);
+
 
   // tau 2
   m_h1d["tau2_pt"]      = new TH1F((m_name + "/h_tau2_pt").c_str(), "tau2_pt", 40, 0, 100);
@@ -24,6 +26,7 @@ void HadHadHists :: book()
   m_h1d["tau2_phi"]     = new TH1F((m_name + "/h_tau2_phi").c_str(), "tau2_phi", 10, -3.15, 3.15);
   m_h1d["tau2_ntracks"] = new TH1F((m_name + "/h_tau2_ntracks").c_str(), "tau2_ntracks", 5, 0, 5);
   m_h1d["tau2_bdt"]     = new TH1F((m_name + "/h_tau2_bdt").c_str(), "tau2_bdt", 10, 0, 1);
+  m_h1d["tau2_pt_res"]  = new TH1F((m_name + "/h_tau2_pt_res").c_str(), "tau2_pt_res", 10, -0.2, 0.2);
 
   // jet1 
   m_h1d["jet1_pt"]      = new TH1F((m_name + "/h_jet1_pt").c_str(),  "jet1_pt", 40, 0, 100);
@@ -71,6 +74,7 @@ void HadHadHists::fill_tau(const xAOD::TauJet * tau1, const xAOD::TauJet * tau2,
     m_h1d["tau1_phi"]->Fill(tau1->phi(), weight);
     m_h1d["tau1_ntracks"]->Fill(tau1->nTracks(), weight);
     m_h1d["tau1_bdt"]->Fill(tau1->discriminant(xAOD::TauJetParameters::TauID::BDTJetScore), weight);
+    m_h1d["tau1_pt_res"]->Fill((tau1->pt() - tau1->auxdata<double>("pt_vis_truth")) / tau1->auxdata<double>("pt_vis_truth"), weight);
   }
 
   if (tau2 != NULL) {
@@ -79,10 +83,9 @@ void HadHadHists::fill_tau(const xAOD::TauJet * tau1, const xAOD::TauJet * tau2,
     m_h1d["tau2_phi"]->Fill(tau2->phi(), weight);
     m_h1d["tau2_ntracks"]->Fill(tau2->nTracks(), weight);
     m_h1d["tau2_bdt"]->Fill(tau2->discriminant(xAOD::TauJetParameters::TauID::BDTJetScore), weight);
+    m_h1d["tau2_pt_res"]->Fill((tau2->pt() - tau2->auxdata<double>("pt_vis_truth")) / tau2->auxdata<double>("pt_vis_truth"), weight);
   }
 
-  if (tau1 != NULL and tau2 != NULL) 
-    m_h1d["tautau_dr"]->Fill(tau1->p4().DeltaR(tau2->p4()), weight);
 }
 
 void HadHadHists::fill_evt(const xAOD::EventInfo* ei, const double & weight)

@@ -151,6 +151,7 @@ EL::StatusCode TauSelector :: execute ()
 	  if (m_tausel->accept(tau)) {
 	    xAOD::TauJet* new_tau = new xAOD::TauJet();
 	    new_tau->makePrivateStore(*tau);
+	    new_tau->auxdecor<double>("pt_vis_truth") = truth->auxdata<double>("pt_vis");
 	    selected_taus->push_back(new_tau);
 	  }
 	}
