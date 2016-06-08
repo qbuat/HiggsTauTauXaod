@@ -18,28 +18,22 @@ if __name__ == '__main__':
     parser.add_argument('--verbose', default=False, action='store_true', help='default = %(default)s')
     parser.add_argument('--num-events', default=-1, type=int, help='default = %(default)s')
     parser.add_argument('--run-dir', type=str, default=None, help='default = %(default)s')
+    parser.add_argument('--xaod', default=False, action='store_true', help='default = %(default)s')
+    parser.add_argument('--version', type=int, default=None, help='default = %(default)s')
+    parser.add_argument('--official', default=False, action='store_true', help='default = %(default)s')
     group_driver = parser.add_mutually_exclusive_group()
     group_driver.add_argument('--direct', dest='driver', action='store_const', const='direct', help='Run your jobs locally.')
     group_driver.add_argument('--grid', dest='driver', action='store_const', const='grid', help='Run your jobs on the grid.')
-    parser.add_argument('--version', type=int, default=None)
-    parser.add_argument('--official', default=False, action='store_true')
     group_driver.set_defaults(driver='direct')
     args = parser.parse_args()
 
 
     ROOT.gROOT.Macro('$ROOTCOREDIR/scripts/load_packages.C')
-    # if not ROOT.xAOD.Init().isSuccess():
-    #     raise RuntimeError
-
-    # sample_name =         'mc15_13TeV.341225.PowhegPythia8EvtGen_CT10_AZNLOCTEQ6L1_ggH125_tautauIncl.merge.AOD.e4044_s2608_r6765_r6282',
 
     test_sample= 'mc15_13TeV.341157.PowhegPythia8EvtGen_CT10_AZNLOCTEQ6L1_VBFH125_tautauhh.merge.AOD.e3888_s2608_s2183_r7772_r7676'
-        # 'mc15_13TeV.341124.PowhegPythia8EvtGen_CT10_AZNLOCTEQ6L1_ggH125_tautauhh.merge.AOD.e3935_s2608_s2183_r7772_r7676',
-        # 'mc15_13TeV.361108.PowhegPythia8EvtGen_AZNLOCTEQ6L1_Ztautau.merge.AOD.e3601_s2726_r7772_r7676'
-    # sample_name = 'mc15_13TeV.341124.PowhegPythia8EvtGen_CT10_AZNLOCTEQ6L1_ggH125_tautauhh.merge.AOD.e3935_s2608_s2183_r7772_r7676'
-    # sample_name = 'mc15_13TeV.361108.PowhegPythia8EvtGen_AZNLOCTEQ6L1_Ztautau.merge.AOD.e3601_s2726_r7772_r7676'
-    # sample_name = 'data15_13TeV.00276790.physics_Main.merge.DAOD_HIGG4D3.f620_m1480_p2425'
 
+
+    # sample list to be processed over the grid
     samples = [
         'mc15_13TeV.341157.PowhegPythia8EvtGen_CT10_AZNLOCTEQ6L1_VBFH125_tautauhh.merge.AOD.e3888_s2608_s2183_r7772_r7676',
         'mc15_13TeV.341124.PowhegPythia8EvtGen_CT10_AZNLOCTEQ6L1_ggH125_tautauhh.merge.AOD.e3935_s2608_s2183_r7772_r7676',
@@ -57,7 +51,6 @@ if __name__ == '__main__':
         for sample in samples:
             log.info('add {0}'.format(sample))
             ROOT.SH.addGrid(sample_handler, sample) 
-        # ROOT.SH.scanDQ2(sample, sample_name)
 
     sample_handler.printContent()
     sample_handler.setMetaString ("nc_tree", "CollectionTree")
@@ -103,7 +96,7 @@ if __name__ == '__main__':
     main_sel.trigger_names = to_str_vec([
             #'HLT_tau35_medium1_tracktwo_tau25_medium1_tracktwo_L1TAU20IM_2TAU12IM',
             'HLT_tau35_medium1_tracktwo_tau25_medium1_tracktwo'])
-            
+
 
     algs = [
         preproc,
@@ -118,6 +111,10 @@ if __name__ == '__main__':
         main_sel,
         ]
 
+    if args.xaod:
+        writer = ROOT.Writer()
+        writer.SetName('Htt_Writer')
+        algs.append(writer)
 
     if args.verbose:
         # See atlas/Control/AthToolSupport/AsgTools/AsgTools/MsgLevel.h
@@ -134,14 +131,10 @@ if __name__ == '__main__':
         log.info('add {0}'.format(alg.GetName()))
         job.algsAdd(alg)
 
-    # out = ROOT.EL.OutputStream("outputLabel", "xAOD");
-    # out.options().setString(ROOT.EL.OutputStream.optContainerSuffix, "out");
-    # job.outputAdd(out);
-    # print 'output added'
-
     # Set the access mode
     job.options().setString(ROOT.EL.Job.optXaodAccessMode, ROOT.EL.Job.optXaodAccessMode_athena)
 
+    # limit number of events ran over for testing purpose
     if args.num_events > 0:
       job.options().setDouble(ROOT.EL.Job.optMaxEvents, args.num_events)
 
@@ -156,6 +149,7 @@ if __name__ == '__main__':
         driver = ROOT.EL.DirectDriver()
         driver.submit(job, run_dir)
 
+    # grid, grid, grid
     elif args.driver == 'grid':
         driver = ROOT.EL.PrunDriver()
 

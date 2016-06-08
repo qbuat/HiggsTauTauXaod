@@ -1,3 +1,5 @@
+#include <HiggsTauTauXaod/Writer.h>
+
 #include <HiggsTauTauXaod/HadHadHists.h>
 
 #include <HiggsTauTauXaod/MetCalculator.h>
@@ -72,4 +74,8 @@
 
 #ifdef __CINT__
 #pragma link C++ class HadHadHists+;
+#endif
+
+#ifdef __CINT__
+#pragma link C++ class Writer+;
 #endif

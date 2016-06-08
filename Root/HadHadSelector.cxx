@@ -318,9 +318,6 @@ EL::StatusCode HadHadSelector :: execute ()
   //   ATH_MSG_ERROR("Need exactly two leptons to proceed and got : "<<electrons->size() + muons->size() + taus->size());
 
 
-  // EL_RETURN_CHECK("execute", event->copy("EventInfo"));
-  // ATH_MSG_INFO("fill event "<< wk()->treeEntry());
-  // event->fill();
   
 
   return EL::StatusCode::SUCCESS;
