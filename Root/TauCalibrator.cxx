@@ -142,18 +142,20 @@ EL::StatusCode TauCalibrator :: execute ()
       ATH_MSG_FATAL("Tau smearing failed miserably");
       return EL::StatusCode::FAILURE;
     }
-    ATH_MSG_DEBUG("old calib pt = " << new_tau->pt());
-    EL_RETURN_CHECK("execute", m_mva_tes_decor->execute(*new_tau));
-    EL_RETURN_CHECK("execute", m_mva_tes_eval->execute(*new_tau));
 
-    float mva_pt = new_tau->auxdata<float>("ptFinalCalib");
-    new_tau->setP4(
-		   mva_pt < 1000. ? 1000. : mva_pt, 
-		   new_tau->etaPanTauCellBased(),
-		   new_tau->phiPanTauCellBased(), 0);
-    ATH_MSG_DEBUG("new calib pt = " << new_tau->pt());
-    ATH_MSG_DEBUG(new_tau->auxdata<float>("ptFinalCalib"));
-    calibrated_taus->push_back(new_tau);
+    // ATH_MSG_DEBUG("old calib pt = " << new_tau->pt());
+    // EL_RETURN_CHECK("execute", m_mva_tes_decor->execute(*new_tau));
+    // EL_RETURN_CHECK("execute", m_mva_tes_eval->execute(*new_tau));
+
+    // float mva_pt = new_tau->auxdata<float>("ptFinalCalib");
+    // new_tau->setP4(
+    // 		   mva_pt < 1000. ? 1000. : mva_pt, 
+    // 		   new_tau->etaPanTauCellBased(),
+    // 		   new_tau->phiPanTauCellBased(), 0);
+    // ATH_MSG_DEBUG("new calib pt = " << new_tau->pt());
+    // ATH_MSG_DEBUG(new_tau->auxdata<float>("ptFinalCalib"));
+    // calibrated_taus->push_back(new_tau);
+
     if (not xAOD::setOriginalObjectLink(*tau, *new_tau)) {
       ATH_MSG_ERROR("Fail to set the links");
       return EL::StatusCode::FAILURE;

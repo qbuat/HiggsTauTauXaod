@@ -97,10 +97,10 @@ EL::StatusCode Writer :: execute ()
   // EL_RETURN_CHECK("execute", Utils::retrieve(taus_aux, "SelectedTausAux.", 0, m_store));
 
 
-  m_event->record(taus, "SelectedTaus");
+  // m_event->record(taus, "SelectedTaus");
   // m_event->record(taus_aux, "SelectedTausAux.");
 
-  // m_event->copy("EventInfo");
+  m_event->copy("EventInfo");
   // m_event->copy("SelectedTaus");
 
   
